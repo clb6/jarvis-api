@@ -4,7 +4,9 @@
             [schema.core :as s]
             [clojure.string :as cs]))
 
-(s/defschema LogEntry { :metadata String :body String })
+(s/defschema LogEntry { :author String :created String :occurred String :version String
+                       :tags String :parent String :todo String :setting String
+                       :body String })
 
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
@@ -13,10 +15,22 @@
   [tag search-term]
   [{:body (str "query: " tag ", " search-term)}])
 
+(defn parse-file-metadata
+  "Takes a metadata string, splits each line, then each line is split per
+  key-value pair.
+
+  e.g. 'Author: John Doe' becomes { :author 'John Doe' }"
+  [metadata]
+  (let [[:as metadata-tuples] (map #(cs/split %1 #": ") (cs/split metadata #"\n"))]
+    (reduce (fn [target-map [k v]]
+              (assoc target-map ((comp keyword cs/lower-case) k) v))
+            {}
+            metadata-tuples)))
+
 (defn parse-file
   [text]
-  (let [[metadata body] (cs/split text #"\n\n")]
-    { :metadata metadata :body body }))
+  (let [[metadata & body] (cs/split text #"\n\n")]
+    (assoc (parse-file-metadata metadata) :body (cs/join "\n\n" body))))
 
 (defn get-log-entry!
   [id]
