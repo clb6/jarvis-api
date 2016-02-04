@@ -16,6 +16,7 @@
 
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
+(def jarvis-images-directory (cs/join "/" [jarvis-root-directory "Images"]))
 
 (defn query-log-entries
   [tag search-term]
@@ -34,10 +35,19 @@
                        metadata-tuples)
                [:tags] #(cs/split %1 #", "))))
 
+(defn markdown-to-html-images
+  "Takes a body of markdown text and replaces the image syntax with html image
+  tags. Returns the new version of the text."
+  [body]
+  (cs/replace body #"!\[([\-\w]*)\]\(([\w.\-\/]*)\)"
+              (format "<img src=\"file://%s/$2\" alt=\"$1\" height=\"750px\" width=\"750px\" />"
+                      jarvis-images-directory)))
+
 (defn parse-file
   [text]
   (let [[metadata & body] (cs/split text #"\n\n")]
-    (assoc (parse-file-metadata metadata) :body (cs/join "\n\n" body))))
+    (assoc (parse-file-metadata metadata) :body
+           (markdown-to-html-images (cs/join "\n\n" body)))))
 
 (defn get-log-entry!
   [id]
