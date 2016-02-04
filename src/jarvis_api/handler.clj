@@ -4,9 +4,9 @@
             [schema.core :as s]
             [clojure.string :as cs]))
 
-(s/defschema LogEntry { :author String :created String :occurred String :version String
-                       :tags String :parent String :todo String :setting String
-                       :body String })
+(s/defschema LogEntry { :author String :created String :occurred String
+                       :version String :tags String :parent (s/maybe s/Str)
+                       :todo (s/maybe s/Str) :setting String :body String })
 
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
