@@ -4,9 +4,15 @@
             [schema.core :as s]
             [clojure.string :as cs]))
 
-(s/defschema LogEntry { :author String :created String :occurred String
-                       :version String :tags String :parent (s/maybe s/Str)
-                       :todo (s/maybe s/Str) :setting String :body String })
+(s/defschema LogEntry { :author String
+                       :created String
+                       :occurred String
+                       :version String
+                       :tags [s/Str]
+                       :parent (s/maybe s/Str)
+                       :todo (s/maybe s/Str)
+                       :setting String
+                       :body String })
 
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
@@ -22,10 +28,11 @@
   e.g. 'Author: John Doe' becomes { :author 'John Doe' }"
   [metadata]
   (let [[:as metadata-tuples] (map #(cs/split %1 #": ") (cs/split metadata #"\n"))]
-    (reduce (fn [target-map [k v]]
-              (assoc target-map ((comp keyword cs/lower-case) k) v))
-            {}
-            metadata-tuples)))
+    (update-in (reduce (fn [target-map [k v]]
+                         (assoc target-map ((comp keyword cs/lower-case) k) v))
+                       {}
+                       metadata-tuples)
+               [:tags] #(cs/split %1 #", "))))
 
 (defn parse-file
   [text]
