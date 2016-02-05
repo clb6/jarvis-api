@@ -1,6 +1,6 @@
 # jarvis-api
 
-FIXME
+This is the data API for the Jarvis project.
 
 ## Usage
 
@@ -18,7 +18,3 @@ java -jar target/server.jar
 ### Packaging as war
 
 `lein ring uberwar`
-
-## License
-
-Copyright ©  FIXME
