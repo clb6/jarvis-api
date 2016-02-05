@@ -1,4 +1,4 @@
-(defproject jarvis-api "0.1.0-SNAPSHOT"
+(defproject jarvis-api "0.1.0"
   :description "FIXME: write description"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [clj-time "0.9.0"] ; required due to bug in lein-ring
