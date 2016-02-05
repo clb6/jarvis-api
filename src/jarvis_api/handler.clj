@@ -14,9 +14,17 @@
                        :setting String
                        :body String })
 
+(s/defschema Tag { :author s/Str
+                  :created s/Str
+                  :version s/Str
+                  :tags [s/Str]
+                  :body s/Str })
+
+
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
 (def jarvis-images-directory (cs/join "/" [jarvis-root-directory "Images"]))
+(def jarvis-tag-directory (cs/join "/" [jarvis-root-directory "Tags"]))
 
 (defn query-log-entries
   [tag search-term]
@@ -55,12 +63,19 @@
         log-entry (slurp log-entry-path)]
     (parse-file log-entry)))
 
+(defn get-tag!
+  [id]
+  (let [tag-path (format "%s/%s.md" jarvis-tag-directory id)
+        tag-content (slurp tag-path)]
+    (parse-file tag-content)))
+
 (defapi app
   (swagger-ui)
   (swagger-docs
     {:info {:title "Jarvis-api"
             :description "Jarvis data api"}
-     :tags [{:name "logentries", :description "handles Jarvis log entries"}]})
+     :tags [{:name "logentries" :description "handles Jarvis log entries"}
+            {:name "tags" :description "handles Jarvis tags"}]})
   (context* "/logentries" []
     :tags ["logentries"]
     :summary "API to handle log entries"
@@ -71,4 +86,11 @@
       (ok (query-log-entries tag searchterm)))
     (GET* "/:id" [id]
       :return LogEntry
-      (ok (get-log-entry! id)))))
+      (ok (get-log-entry! id))))
+  (context* "/tags" []
+    :tags ["tags"]
+    :summary "API to handle tags"
+    (GET* "/:id" [id]
+      :return Tag
+      (ok (get-tag! id))))
+  )
