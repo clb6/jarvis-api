@@ -63,11 +63,29 @@
         log-entry (slurp log-entry-path)]
     (parse-file log-entry)))
 
+
+(defn get-tag-tuples
+  []
+  (let [tag-files (filter #(.isFile %1)
+                          (file-seq (clojure.java.io/file jarvis-tag-directory)))]
+    (letfn [(tag-file-to-name [tag-file]
+              (list ((comp clojure.string/lower-case
+                           #(clojure.string/replace %1 #".md" ""))
+                     (.getName tag-file))
+                    tag-file))]
+      (map tag-file-to-name tag-files))))
+
+(defn get-tag-tuple
+  [tag-name]
+  (first (filter #(= tag-name (first %1)) (get-tag-tuples))))
+
 (defn get-tag!
   [id]
-  (let [tag-path (format "%s/%s.md" jarvis-tag-directory id)
-        tag-content (slurp tag-path)]
-    (parse-file tag-content)))
+  (let [tag-tuple (get-tag-tuple id)]
+    (if tag-tuple
+      (let [tag-content (slurp (second tag-tuple))]
+        (parse-file tag-content)))))
+
 
 (defapi app
   (swagger-ui)
