@@ -20,6 +20,7 @@
                   :tags [s/Str]
                   :body s/Str })
 
+(s/defschema WebError { :message s/Str })
 
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
@@ -109,7 +110,10 @@
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
-    (GET* "/:id" [id]
-      :return Tag
-      (ok (get-tag-object! id))))
+    (GET* "/:tag-name" [tag-name]
+      :responses {200 {:schema Tag :description "Return found tag"}
+                  404 {:schema WebError :description "Tag not found"}}
+      (if-let [tag-object (get-tag-object! tag-name)]
+        (ok tag-object)
+        (not-found { :message "Unknown tag" }))))
   )
