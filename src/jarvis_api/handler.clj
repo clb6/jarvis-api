@@ -64,26 +64,27 @@
     (parse-file log-entry)))
 
 
-(defn get-tag-tuples
+(defn fetch-tag-files!
+  "Returns a list of all available tags as Java Files"
   []
-  (let [tag-files (filter #(.isFile %1)
-                          (file-seq (clojure.java.io/file jarvis-tag-directory)))]
-    (letfn [(tag-file-to-name [tag-file]
-              (list ((comp clojure.string/lower-case
-                           #(clojure.string/replace %1 #".md" ""))
-                     (.getName tag-file))
-                    tag-file))]
-      (map tag-file-to-name tag-files))))
+  (filter #(.isFile %1) (file-seq (clojure.java.io/file jarvis-tag-directory))))
 
-(defn get-tag-tuple
+(defn filter-tag-files-by-tag-name
+  "Function extracts the Java File with a matching name which means matches by a
+  case-insensitive version of the file name. Returns only the first match."
+  [tag-name tag-files]
+  (letfn [(tag-file-to-name [tag-file]
+            ((comp clojure.string/lower-case
+                   #(clojure.string/replace %1 #".md" ""))
+             (.getName tag-file)))]
+  (first (filter #(= tag-name (tag-file-to-name %1)) tag-files))))
+
+(defn get-tag-object!
+  "Returns the map representation of a given tag name"
   [tag-name]
-  (first (filter #(= tag-name (first %1)) (get-tag-tuples))))
-
-(defn get-tag!
-  [id]
-  (let [tag-tuple (get-tag-tuple id)]
-    (if tag-tuple
-      (let [tag-content (slurp (second tag-tuple))]
+  (let [tag-file (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))]
+    (if tag-file
+      (let [tag-content (slurp tag-file)]
         (parse-file tag-content)))))
 
 
@@ -110,5 +111,5 @@
     :summary "API to handle tags"
     (GET* "/:id" [id]
       :return Tag
-      (ok (get-tag! id))))
+      (ok (get-tag-object! id))))
   )
