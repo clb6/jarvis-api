@@ -1,7 +1,7 @@
 (defproject jarvis-api "0.1.0"
   :description "FIXME: write description"
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [clj-time "0.9.0"] ; required due to bug in lein-ring
+                 [clj-time "0.11.0"] ; required due to bug in lein-ring
                  [metosin/compojure-api "0.22.0"]]
   :ring {:handler jarvis-api.handler/app}
   :uberjar-name "server.jar"

@@ -2,7 +2,9 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
-            [clojure.string :as cs]))
+            [clojure.string :as cs]
+            [clj-time.core :as t]
+            [clj-time.format :as tf]))
 
 (s/defschema LogEntry { :author String
                        :created String
@@ -108,10 +110,20 @@
   (cs/join "\n\n" (list (generate-tag-file-metadata tag-object)
                         (get tag-object :body))))
 
+(defn create-tag-object
+  "Create Tag from TagRequest"
+  [tag-request]
+  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (t/now))]
+    (dissoc (assoc tag-request :created now-isoformat :version jarvis-tag-version)
+            :name)))
+
 (defn post-tag-object!
-  [tag-object tag-name]
-  (let [tag-file-path (format "%s/%s.md" jarvis-tag-directory tag-name)]
-    (spit tag-file-path (generate-tag-file tag-object))))
+  "Takes a TagRequest converts to a Tag which is written to the filesystem in the
+  tag file format"
+  [tag-request]
+  (let [tag-name (get tag-request :name)
+        tag-file-path (format "%s/%s.md" jarvis-tag-directory tag-name)]
+    (spit tag-file-path (generate-tag-file (create-tag-object tag-request)))))
 
 
 (defapi app
@@ -140,5 +152,9 @@
                   404 {:schema WebError :description "Tag not found"}}
       (if-let [tag-object (get-tag-object! tag-name)]
         (ok tag-object)
-        (not-found { :message "Unknown tag" }))))
+        (not-found { :message "Unknown tag" })))
+    ;(POST* "/" []
+    ;  :return { :created_tags [s/Str] }
+    ;  :body [tag-object-new Tag]
+            )
   )
