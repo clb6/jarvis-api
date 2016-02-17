@@ -20,12 +20,19 @@
                   :tags [s/Str]
                   :body s/Str })
 
+(s/defschema TagRequest { :name s/Str
+                         :author s/Str
+                         :tags [s/Str]
+                         :body s/Str })
+
 (s/defschema WebError { :message s/Str })
 
 (def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
 (def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
 (def jarvis-images-directory (cs/join "/" [jarvis-root-directory "Images"]))
 (def jarvis-tag-directory (cs/join "/" [jarvis-root-directory "Tags"]))
+
+(def jarvis-tag-version "0.1.0")
 
 (defn query-log-entries
   [tag search-term]
@@ -87,6 +94,24 @@
     (if tag-file
       (let [tag-content (slurp tag-file)]
         (parse-file tag-content)))))
+
+
+(defn generate-tag-file-metadata
+  [tag-object]
+  (let [metadata-keys (list :author :created :version :tags)]
+    (letfn [(create-line [mk]
+              (cs/join ": " (list (cs/capitalize (name mk)) (get tag-object mk))))]
+      (cs/join "\n" (map create-line metadata-keys)))))
+
+(defn generate-tag-file
+  [tag-object]
+  (cs/join "\n\n" (list (generate-tag-file-metadata tag-object)
+                        (get tag-object :body))))
+
+(defn post-tag-object!
+  [tag-object tag-name]
+  (let [tag-file-path (format "%s/%s.md" jarvis-tag-directory tag-name)]
+    (spit tag-file-path (generate-tag-file tag-object))))
 
 
 (defapi app
