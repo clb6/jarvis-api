@@ -101,9 +101,14 @@
 (defn generate-tag-file-metadata
   [tag-object]
   (let [metadata-keys (list :author :created :version :tags)]
-    (letfn [(create-line [mk]
-              (cs/join ": " (list (cs/capitalize (name mk)) (get tag-object mk))))]
-      (cs/join "\n" (map create-line metadata-keys)))))
+    (letfn [(get-metadata-value [mk]
+              (let [value (get tag-object mk)]
+                (if (= clojure.lang.PersistentVector (type value))
+                  (cs/join ", " value)
+                  value)))
+            (generate-line [mk]
+              (cs/join ": " (list (cs/capitalize (name mk)) (get-metadata-value mk))))]
+      (cs/join "\n" (map generate-line metadata-keys)))))
 
 (defn generate-tag-file
   [tag-object]
