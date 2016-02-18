@@ -83,11 +83,22 @@
   "Function extracts the Java File with a matching name which means matches by a
   case-insensitive version of the file name. Returns only the first match."
   [tag-name tag-files]
-  (letfn [(tag-file-to-name [tag-file]
-            ((comp clojure.string/lower-case
-                   #(clojure.string/replace %1 #".md" ""))
-             (.getName tag-file)))]
-  (first (filter #(= tag-name (tag-file-to-name %1)) tag-files))))
+  (let [tag-name (clojure.string/lower-case tag-name)]
+    (letfn [(tag-file-to-name [tag-file]
+              ((comp clojure.string/lower-case
+                     #(clojure.string/replace %1 #".md" ""))
+               (.getName tag-file)))]
+    (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
+
+(defn tag-exists?
+  "Case-insensitive check of whether a tag already exists"
+  [tag-name]
+  ((comp not nil?) (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))))
+
+(defn filter-tag-names-missing
+  "Given a list of tag names, returns the list of tag names that are missing"
+  [tag-names]
+  (filter #(not (tag-exists? %1)) tag-names))
 
 (defn get-tag-object!
   "Returns the map representation of a given tag name"
@@ -122,13 +133,19 @@
     (dissoc (assoc tag-request :created now-isoformat :version jarvis-tag-version)
             :name)))
 
-(defn post-tag-object!
+(defn post-tag!
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
-  tag file format"
+  tag file format.
+
+  Returns web response"
   [tag-request]
   (let [tag-name (get tag-request :name)
         tag-file-path (format "%s/%s.md" jarvis-tag-directory tag-name)]
-    (spit tag-file-path (generate-tag-file (create-tag-object tag-request)))))
+    (if (tag-exists? tag-name)
+      (conflict)
+      (if (nil? (spit tag-file-path (generate-tag-file
+                                      (create-tag-object tag-request))))
+        (ok { :tags_missing (filter-tag-names-missing (:tags tag-request)) })))))
 
 
 (defapi app
@@ -158,8 +175,8 @@
       (if-let [tag-object (get-tag-object! tag-name)]
         (ok tag-object)
         (not-found { :message "Unknown tag" })))
-    ;(POST* "/" []
-    ;  :return { :created_tags [s/Str] }
-    ;  :body [tag-object-new Tag]
-            )
+    (POST* "/" []
+      :return { :tags_missing [s/Str] }
+      :body [tag-request TagRequest]
+      (post-tag! tag-request)))
   )
