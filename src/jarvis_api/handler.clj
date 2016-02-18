@@ -74,12 +74,12 @@
     (parse-file log-entry)))
 
 
-(defn fetch-tag-files!
+(defn- fetch-tag-files!
   "Returns a list of all available tags as Java Files"
   []
   (filter #(.isFile %1) (file-seq (clojure.java.io/file jarvis-tag-directory))))
 
-(defn filter-tag-files-by-tag-name
+(defn- filter-tag-files-by-tag-name
   "Function extracts the Java File with a matching name which means matches by a
   case-insensitive version of the file name. Returns only the first match."
   [tag-name tag-files]
@@ -90,12 +90,12 @@
                (.getName tag-file)))]
     (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
 
-(defn tag-exists?
+(defn- tag-exists?
   "Case-insensitive check of whether a tag already exists"
   [tag-name]
   ((comp not nil?) (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))))
 
-(defn filter-tag-names-missing
+(defn- filter-tag-names-missing
   "Given a list of tag names, returns the list of tag names that are missing"
   [tag-names]
   (filter #(not (tag-exists? %1)) tag-names))
@@ -109,7 +109,7 @@
         (parse-file tag-content)))))
 
 
-(defn generate-tag-file-metadata
+(defn- generate-tag-file-metadata
   [tag-object]
   (let [metadata-keys (list :author :created :version :tags)]
     (letfn [(get-metadata-value [mk]
@@ -121,12 +121,12 @@
               (cs/join ": " (list (cs/capitalize (name mk)) (get-metadata-value mk))))]
       (cs/join "\n" (map generate-line metadata-keys)))))
 
-(defn generate-tag-file
+(defn- generate-tag-file
   [tag-object]
   (cs/join "\n\n" (list (generate-tag-file-metadata tag-object)
                         (get tag-object :body))))
 
-(defn create-tag-object
+(defn- create-tag-object
   "Create Tag from TagRequest"
   [tag-request]
   (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (t/now))]
