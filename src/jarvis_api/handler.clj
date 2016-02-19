@@ -2,9 +2,9 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
-            [clojure.string :as cs]
-            [clj-time.core :as t]
-            [clj-time.format :as tf]))
+            [jarvis-api.resources.tags :as tags]
+            [jarvis-api.resources.logentries :as logs]))
+
 
 (s/defschema LogEntry { :author String
                        :created String
@@ -29,123 +29,10 @@
 
 (s/defschema WebError { :message s/Str })
 
-(def jarvis-root-directory (System/getenv "JARVIS_DIR_ROOT"))
-(def jarvis-log-directory (cs/join "/" [jarvis-root-directory "LogEntries"]))
-(def jarvis-images-directory (cs/join "/" [jarvis-root-directory "Images"]))
-(def jarvis-tag-directory (cs/join "/" [jarvis-root-directory "Tags"]))
-
-(def jarvis-tag-version "0.1.0")
 
 (defn query-log-entries
   [tag search-term]
   [{:body (str "query: " tag ", " search-term)}])
-
-(defn parse-file-metadata
-  "Takes a metadata string, splits each line, then each line is split per
-  key-value pair.
-
-  e.g. 'Author: John Doe' becomes { :author 'John Doe' }"
-  [metadata]
-  (let [[:as metadata-tuples] (map #(cs/split %1 #": ") (cs/split metadata #"\n"))]
-    (update-in (reduce (fn [target-map [k v]]
-                         (assoc target-map ((comp keyword cs/lower-case) k) v))
-                       {}
-                       metadata-tuples)
-               [:tags] #(cs/split %1 #", "))))
-
-(defn markdown-to-html-images
-  "Takes a body of markdown text and replaces the image syntax with html image
-  tags. Returns the new version of the text."
-  [body]
-  (cs/replace body #"!\[([\-\w]*)\]\(([\w.\-\/]*)\)"
-              (format "<img src=\"file://%s/$2\" alt=\"$1\" height=\"750px\" width=\"750px\" />"
-                      jarvis-images-directory)))
-
-(defn parse-file
-  [text]
-  (let [[metadata & body] (cs/split text #"\n\n")]
-    (assoc (parse-file-metadata metadata) :body
-           (markdown-to-html-images (cs/join "\n\n" body)))))
-
-(defn get-log-entry!
-  [id]
-  (let [log-entry-path (format "%s/%s.md" jarvis-log-directory id)
-        log-entry (slurp log-entry-path)]
-    (parse-file log-entry)))
-
-
-(defn- fetch-tag-files!
-  "Returns a list of all available tags as Java Files"
-  []
-  (filter #(.isFile %1) (file-seq (clojure.java.io/file jarvis-tag-directory))))
-
-(defn- filter-tag-files-by-tag-name
-  "Function extracts the Java File with a matching name which means matches by a
-  case-insensitive version of the file name. Returns only the first match."
-  [tag-name tag-files]
-  (let [tag-name (clojure.string/lower-case tag-name)]
-    (letfn [(tag-file-to-name [tag-file]
-              ((comp clojure.string/lower-case
-                     #(clojure.string/replace %1 #".md" ""))
-               (.getName tag-file)))]
-    (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
-
-(defn- tag-exists?
-  "Case-insensitive check of whether a tag already exists"
-  [tag-name]
-  ((comp not nil?) (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))))
-
-(defn- filter-tag-names-missing
-  "Given a list of tag names, returns the list of tag names that are missing"
-  [tag-names]
-  (filter #(not (tag-exists? %1)) tag-names))
-
-(defn get-tag-object!
-  "Returns the map representation of a given tag name"
-  [tag-name]
-  (let [tag-file (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))]
-    (if tag-file
-      (let [tag-content (slurp tag-file)]
-        (parse-file tag-content)))))
-
-
-(defn- generate-tag-file-metadata
-  [tag-object]
-  (let [metadata-keys (list :author :created :version :tags)]
-    (letfn [(get-metadata-value [mk]
-              (let [value (get tag-object mk)]
-                (if (= clojure.lang.PersistentVector (type value))
-                  (cs/join ", " value)
-                  value)))
-            (generate-line [mk]
-              (cs/join ": " (list (cs/capitalize (name mk)) (get-metadata-value mk))))]
-      (cs/join "\n" (map generate-line metadata-keys)))))
-
-(defn- generate-tag-file
-  [tag-object]
-  (cs/join "\n\n" (list (generate-tag-file-metadata tag-object)
-                        (get tag-object :body))))
-
-(defn- create-tag-object
-  "Create Tag from TagRequest"
-  [tag-request]
-  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (t/now))]
-    (dissoc (assoc tag-request :created now-isoformat :version jarvis-tag-version)
-            :name)))
-
-(defn post-tag!
-  "Takes a TagRequest converts to a Tag which is written to the filesystem in the
-  tag file format.
-
-  Returns web response"
-  [tag-request]
-  (let [tag-name (get tag-request :name)
-        tag-file-path (format "%s/%s.md" jarvis-tag-directory tag-name)]
-    (if (tag-exists? tag-name)
-      (conflict)
-      (if (nil? (spit tag-file-path (generate-tag-file
-                                      (create-tag-object tag-request))))
-        (ok { :tags_missing (filter-tag-names-missing (:tags tag-request)) })))))
 
 
 (defapi app
@@ -165,18 +52,18 @@
       (ok (query-log-entries tag searchterm)))
     (GET* "/:id" [id]
       :return LogEntry
-      (ok (get-log-entry! id))))
+      (ok (logs/get-log-entry! id))))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
     (GET* "/:tag-name" [tag-name]
       :responses {200 {:schema Tag :description "Return found tag"}
                   404 {:schema WebError :description "Tag not found"}}
-      (if-let [tag-object (get-tag-object! tag-name)]
+      (if-let [tag-object (tags/get-tag-object! tag-name)]
         (ok tag-object)
         (not-found { :message "Unknown tag" })))
     (POST* "/" []
       :return { :tags_missing [s/Str] }
       :body [tag-request TagRequest]
-      (post-tag! tag-request)))
+      (tags/post-tag! tag-request)))
   )
