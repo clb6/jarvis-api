@@ -34,7 +34,7 @@
   (filter #(not (tag-exists? %1)) tag-names))
 
 (defn get-tag!
-  "Returns the map representation of a given tag name"
+  "Returns web response where it will return a tag object if a tag is found"
   [tag-name]
   (let [tag-file (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))]
     (if tag-file
