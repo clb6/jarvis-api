@@ -3,7 +3,7 @@
             [jarvis-api.config :as config]))
 
 
-(defn parse-file-metadata
+(defn- parse-file-metadata
   "Takes a metadata string, splits each line, then each line is split per
   key-value pair.
 
@@ -16,7 +16,7 @@
                        metadata-tuples)
                [:tags] #(cs/split %1 #", "))))
 
-(defn markdown-to-html-images
+(defn- markdown-to-html-images
   "Takes a body of markdown text and replaces the image syntax with html image
   tags. Returns the new version of the text."
   [body]
