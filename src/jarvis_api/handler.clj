@@ -57,8 +57,7 @@
     :tags ["tags"]
     :summary "API to handle tags"
     (GET* "/:tag-name" [tag-name]
-      :responses {200 {:schema Tag :description "Return found tag"}
-                  404 {:schema WebError :description "Tag not found"}}
+      :return Tag
       (tags/get-tag! tag-name))
     (POST* "/" []
       :return { :tags_missing [s/Str] }

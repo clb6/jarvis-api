@@ -40,7 +40,7 @@
     (if tag-file
       (let [tag-content (slurp tag-file)]
         (ok (mf/parse-file tag-content)))
-      (not-found { :message "unknown tag" }))))
+      (not-found))))
 
 
 (defn- generate-tag-file-metadata
