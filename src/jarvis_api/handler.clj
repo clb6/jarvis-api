@@ -59,9 +59,7 @@
     (GET* "/:tag-name" [tag-name]
       :responses {200 {:schema Tag :description "Return found tag"}
                   404 {:schema WebError :description "Tag not found"}}
-      (if-let [tag-object (tags/get-tag-object! tag-name)]
-        (ok tag-object)
-        (not-found { :message "Unknown tag" })))
+      (tags/get-tag! tag-name))
     (POST* "/" []
       :return { :tags_missing [s/Str] }
       :body [tag-request TagRequest]

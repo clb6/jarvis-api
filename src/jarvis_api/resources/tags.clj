@@ -33,13 +33,14 @@
   [tag-names]
   (filter #(not (tag-exists? %1)) tag-names))
 
-(defn get-tag-object!
+(defn get-tag!
   "Returns the map representation of a given tag name"
   [tag-name]
   (let [tag-file (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))]
     (if tag-file
       (let [tag-content (slurp tag-file)]
-        (mf/parse-file tag-content)))))
+        (ok (mf/parse-file tag-content)))
+      (not-found { :message "unknown tag" }))))
 
 
 (defn- generate-tag-file-metadata
