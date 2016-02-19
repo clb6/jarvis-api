@@ -52,7 +52,7 @@
       (ok (query-log-entries tag searchterm)))
     (GET* "/:id" [id]
       :return LogEntry
-      (ok (logs/get-log-entry! id))))
+      (logs/get-log-entry! id)))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
