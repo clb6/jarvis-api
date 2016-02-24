@@ -8,3 +8,4 @@
 (def jarvis-tag-directory (cs/join "/" [jarvis-root-directory "Tags"]))
 
 (def jarvis-tag-version "0.1.0")
+(def jarvis-log-entry-version "0.4.0")
