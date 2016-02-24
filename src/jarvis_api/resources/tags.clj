@@ -1,6 +1,5 @@
 (ns jarvis-api.resources.tags
-  (:require [clojure.string :as cs]
-            [clj-time.core :as tc]
+  (:require [clj-time.core :as tc]
             [clj-time.format :as tf]
             [ring.util.http-response :refer :all]
             [jarvis-api.config :as config]
@@ -43,22 +42,8 @@
       (not-found))))
 
 
-(defn- generate-tag-file-metadata
-  [tag-object]
-  (let [metadata-keys (list :author :created :version :tags)]
-    (letfn [(get-metadata-value [mk]
-              (let [value (get tag-object mk)]
-                (if (= clojure.lang.PersistentVector (type value))
-                  (cs/join ", " value)
-                  value)))
-            (generate-line [mk]
-              (cs/join ": " (list (cs/capitalize (name mk)) (get-metadata-value mk))))]
-      (cs/join "\n" (map generate-line metadata-keys)))))
-
-(defn- generate-tag-file
-  [tag-object]
-  (cs/join "\n\n" (list (generate-tag-file-metadata tag-object)
-                        (get tag-object :body))))
+(def metadata-keys-tags (list :author :created :version :tags))
+(def create-tag-file (partial mf/create-file metadata-keys-tags))
 
 (defn- create-tag-object
   "Create Tag from TagRequest"
@@ -77,7 +62,7 @@
         tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
     (if (tag-exists? tag-name)
       (conflict)
-      (if (nil? (spit tag-file-path (generate-tag-file
+      (if (nil? (spit tag-file-path (create-tag-file
                                       (create-tag-object tag-request))))
         (ok { :tags_missing (filter-tag-names-missing (:tags tag-request)) })))))
 

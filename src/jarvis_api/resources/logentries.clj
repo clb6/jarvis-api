@@ -1,6 +1,5 @@
 (ns jarvis-api.resources.logentries
-  (:require [clojure.string :as cs]
-            [clj-time.core :as tc]
+  (:require [clj-time.core :as tc]
             [clj-time.format :as tf]
             [ring.util.http-response :refer :all]
             [jarvis-api.config :as config]
@@ -16,29 +15,13 @@
       (not-found))))
 
 
-(defn generate-file-metadata
-  [metadata-keys log-entry-object]
-  (letfn [(get-metadata-value [mk]
-            (let [value (get log-entry-object mk)]
-              (if (= clojure.lang.PersistentVector (type value))
-                (cs/join ", " value)
-                value)))
-          (generate-line [mk]
-            (cs/join ": " (list (cs/capitalize (name mk)) (get-metadata-value mk))))]
-    (cs/join "\n" (map generate-line metadata-keys))))
-
-(defn generate-file
-  [metadata-keys log-entry-object]
-  (cs/join "\n\n" (list (generate-file-metadata metadata-keys log-entry-object)
-                        (get log-entry-object :body))))
-
 ; Tried to use the `keys` method from the schema but the sort order is not
 ; predictable. Maybe use two separate vectors to construct the schema via zip.
 (def metadata-keys-log-entries (list :author :created :occurred :version :tags
                                      :parent :todo :setting))
-(def generate-log-entry-file (partial generate-file metadata-keys-log-entries))
+(def create-log-entry-file (partial mf/create-file metadata-keys-log-entries))
 
-(defn create-log-entry-object
+(defn- create-log-entry-object
   "TODO: Reinforce Schema. I tried this:
 
   [log-entry-request :- jas/LogEntryRequest]
@@ -50,7 +33,7 @@
   (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) created)]
     (assoc log-entry-request :created now-isoformat :version config/jarvis-log-entry-version)))
 
-(defn generate-log-entry-path
+(defn- generate-log-entry-path
   "The file name is  simply the epoch time of the created clj-time/datetime.
 
   Returns the full path"
@@ -68,5 +51,5 @@
   (let [created (tc/now)
         log-entry-path (generate-log-entry-path created)
         log-entry-object (create-log-entry-object created log-entry-request)]
-    (if (nil? (spit log-entry-path (generate-log-entry-file log-entry-object)))
+    (if (nil? (spit log-entry-path (create-log-entry-file log-entry-object)))
       (ok))))

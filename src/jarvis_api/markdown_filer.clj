@@ -30,3 +30,20 @@
     (assoc (parse-file-metadata metadata) :body
            (markdown-to-html-images (cs/join "\n\n" body)))))
 
+
+(defn- create-file-metadata
+  [metadata-keys jarvis-object]
+  (letfn [(get-metadata-value [mk]
+            (let [value (get jarvis-object mk)]
+              (if (= clojure.lang.PersistentVector (type value))
+                (cs/join ", " value)
+                value)))
+          (generate-line [mk]
+            (cs/join ": " (list (cs/capitalize (name mk)) (get-metadata-value mk))))]
+    (cs/join "\n" (map generate-line metadata-keys))))
+
+(defn create-file
+  [metadata-keys jarvis-object]
+  (cs/join "\n\n" (list (create-file-metadata metadata-keys jarvis-object)
+                        (get jarvis-object :body))))
+
