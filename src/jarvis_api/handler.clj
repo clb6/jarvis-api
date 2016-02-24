@@ -16,6 +16,14 @@
                        :setting String
                        :body String })
 
+(s/defschema LogEntryRequest  { :author String
+                               :occurred String
+                               :tags [s/Str]
+                               (s/optional-key :parent) (s/maybe s/Str)
+                               (s/optional-key :todo) (s/maybe s/Str)
+                               :setting String
+                               :body String })
+
 (s/defschema Tag { :author s/Str
                   :created s/Str
                   :version s/Str
@@ -52,7 +60,10 @@
       (ok (query-log-entries tag searchterm)))
     (GET* "/:id" [id]
       :return LogEntry
-      (logs/get-log-entry! id)))
+      (logs/get-log-entry! id))
+    (POST* "/" []
+      :body [log-entry-request LogEntryRequest]
+      (logs/post-log-entry! log-entry-request)))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"

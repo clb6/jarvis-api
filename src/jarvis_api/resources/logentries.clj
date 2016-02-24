@@ -46,13 +46,27 @@
   but I got this error:
 
   CompilerException java.lang.RuntimeException: Can't use qualified name as parameter: jas/LogEntryRequest, compiling:(jarvis_api/resources/logentries.clj:38:1)"
-  [log-entry-request]
-  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (tc/now))]
+  [created log-entry-request]
+  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) created)]
     (assoc log-entry-request :created now-isoformat :version config/jarvis-log-entry-version)))
 
+(defn generate-log-entry-path
+  "The file name is  simply the epoch time of the created clj-time/datetime.
+
+  Returns the full path"
+  [created]
+  (let [log-entry-name (tc/in-seconds (tc/interval (tc/epoch) created))]
+    (format "%s/%s.md" config/jarvis-log-directory log-entry-name)))
+
 (defn post-log-entry!
+  "Post a new log entry where new entries are appended.
+
+  [log-entry-request :- LogEntryRequest]
+
+  Returns a http-response"
   [log-entry-request]
-  ; Create file name
-  ; Create object
-  ; Generate log entry file
-  )
+  (let [created (tc/now)
+        log-entry-path (generate-log-entry-path created)
+        log-entry-object (create-log-entry-object created log-entry-request)]
+    (if (nil? (spit log-entry-path (generate-log-entry-file log-entry-object)))
+      (ok))))
