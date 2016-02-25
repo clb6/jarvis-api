@@ -52,11 +52,14 @@
     (dissoc (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)
             :name)))
 
-(s/defn post-tag!
+(s/defn post-tag! :- Tag
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
   tag file format."
   [tag-request :- TagRequest]
   (let [tag-name (get tag-request :name)
         tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
     (if (not (tag-exists? tag-name))
-      (spit tag-file-path (create-tag-file (create-tag-object tag-request))))))
+      (let [tag-object (create-tag-object tag-request)]
+        (spit tag-file-path (create-tag-file tag-object))
+        tag-object))))
+

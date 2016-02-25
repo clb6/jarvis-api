@@ -45,6 +45,7 @@
         (ok (tags/get-tag! tag-name))
         (not-found)))
     (POST* "/" []
+      :return Tag
       :body [tag-request TagRequest]
       (if (tags/tag-exists? (:name tag-request))
         (conflict)
