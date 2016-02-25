@@ -28,9 +28,9 @@
   [tag-name]
   ((comp not nil?) (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))))
 
-(defn- filter-tag-names-missing
+(s/defn filter-tag-names-missing :- [s/Str]
   "Given a list of tag names, returns the list of tag names that are missing"
-  [tag-names]
+  [tag-names :- [s/Str]]
   (filter #(not (tag-exists? %1)) tag-names))
 
 (s/defn get-tag! :- Tag

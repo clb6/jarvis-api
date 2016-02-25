@@ -12,7 +12,6 @@
   [{:body (str "query: " tag ", " search-term)}])
 
 
-; TODO: Check to make sure that all Tags exist before posting.
 (defapi app
   (swagger-ui)
   (swagger-docs
@@ -34,8 +33,11 @@
         (ok log-entry)
         (not-found)))
     (POST* "/" []
+      :return LogEntry
       :body [log-entry-request LogEntryRequest]
-      (ok (logs/post-log-entry! log-entry-request))))
+      (if-let [tag-names-missing (tags/filter-tag-names-missing (:tags log-entry-request))]
+        (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
+        (ok (logs/post-log-entry! log-entry-request)))))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
@@ -49,5 +51,7 @@
       :body [tag-request TagRequest]
       (if (tags/tag-exists? (:name tag-request))
         (conflict)
-        (ok (tags/post-tag! tag-request)))))
+        (if-let [tag-names-missing (tags/filter-tag-names-missing (:tags tag-request))]
+          (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
+          (ok (tags/post-tag! tag-request))))))
   )
