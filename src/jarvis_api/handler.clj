@@ -2,6 +2,8 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
+            [ring.middleware.logger :as log]
+            [clj-logging-config.log4j :refer [set-loggers!]]
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest Tag TagRequest]]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]))
@@ -55,3 +57,10 @@
           (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
           (ok (tags/post-tag! tag-request))))))
   )
+
+
+(def app-with-logging (log/wrap-with-logger app))
+
+(defn init-app
+  []
+  (set-loggers! :root { :level :info }))
