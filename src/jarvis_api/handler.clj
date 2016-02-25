@@ -12,6 +12,7 @@
   [{:body (str "query: " tag ", " search-term)}])
 
 
+; TODO: Check to make sure that all Tags exist before posting.
 (defapi app
   (swagger-ui)
   (swagger-docs
@@ -29,18 +30,23 @@
       (ok (query-log-entries tag searchterm)))
     (GET* "/:id" [id]
       :return LogEntry
-      (logs/get-log-entry! id))
+      (if-let [log-entry (logs/get-log-entry! id)]
+        (ok log-entry)
+        (not-found)))
     (POST* "/" []
       :body [log-entry-request LogEntryRequest]
-      (logs/post-log-entry! log-entry-request)))
+      (ok (logs/post-log-entry! log-entry-request))))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
     (GET* "/:tag-name" [tag-name]
       :return Tag
-      (tags/get-tag! tag-name))
+      (if (tags/tag-exists? tag-name)
+        (ok (tags/get-tag! tag-name))
+        (not-found)))
     (POST* "/" []
-      :return { :tags_missing [s/Str] }
       :body [tag-request TagRequest]
-      (tags/post-tag! tag-request)))
+      (if (tags/tag-exists? (:name tag-request))
+        (conflict)
+        (ok (tags/post-tag! tag-request)))))
   )

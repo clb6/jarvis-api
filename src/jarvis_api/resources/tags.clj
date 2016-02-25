@@ -1,7 +1,8 @@
 (ns jarvis-api.resources.tags
   (:require [clj-time.core :as tc]
             [clj-time.format :as tf]
-            [ring.util.http-response :refer :all]
+            [schema.core :as s]
+            [jarvis-api.schemas :refer [Tag TagRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]))
 
@@ -22,7 +23,7 @@
                (.getName tag-file)))]
     (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
 
-(defn- tag-exists?
+(defn tag-exists?
   "Case-insensitive check of whether a tag already exists"
   [tag-name]
   ((comp not nil?) (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))))
@@ -32,14 +33,13 @@
   [tag-names]
   (filter #(not (tag-exists? %1)) tag-names))
 
-(defn get-tag!
+(s/defn get-tag! :- Tag
   "Returns web response where it will return a tag object if a tag is found"
-  [tag-name]
+  [tag-name :- String]
   (let [tag-file (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))]
     (if tag-file
       (let [tag-content (slurp tag-file)]
-        (ok (mf/parse-file tag-content)))
-      (not-found))))
+        (mf/parse-file tag-content)))))
 
 
 (def metadata-keys-tags (list :author :created :version :tags))
@@ -52,17 +52,11 @@
     (dissoc (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)
             :name)))
 
-(defn post-tag!
+(s/defn post-tag!
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
-  tag file format.
-
-  Returns web response"
-  [tag-request]
+  tag file format."
+  [tag-request :- TagRequest]
   (let [tag-name (get tag-request :name)
         tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
-    (if (tag-exists? tag-name)
-      (conflict)
-      (if (nil? (spit tag-file-path (create-tag-file
-                                      (create-tag-object tag-request))))
-        (ok { :tags_missing (filter-tag-names-missing (:tags tag-request)) })))))
-
+    (if (not (tag-exists? tag-name))
+      (spit tag-file-path (create-tag-file (create-tag-object tag-request))))))
