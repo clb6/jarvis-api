@@ -22,9 +22,16 @@
 (def create-log-entry-file (partial mf/create-file metadata-keys-log-entries))
 
 (defn- create-log-entry-object
+  "Creates a full LogEntry meaning that fields that are considered optional in
+  the request are added into the object."
   [created log-entry-request]
-  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) created)]
-    (assoc log-entry-request :created now-isoformat :version config/jarvis-log-entry-version)))
+  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) created)
+        log-entry-object (assoc log-entry-request :created now-isoformat
+                                :version config/jarvis-log-entry-version)]
+    (reduce (fn [target-map k] (if (not (contains? target-map k))
+                                 (assoc target-map k nil)))
+            log-entry-object
+            [:parent :todo])))
 
 (defn- generate-log-entry-path
   "The file name is  simply the epoch time of the created clj-time/datetime.
