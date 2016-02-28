@@ -13,6 +13,16 @@
   [tag search-term]
   [{:body (str "query: " tag ", " search-term)}])
 
+(defn- find-missing-tags
+  "Find the list of tags that do not exist if there are no missing tags then
+  return nothing. This method is to work around the poor truthiness evaluation by
+  Clojure - empty vectors are considered True and not False."
+  [jarvis-request]
+  (let [tag-names-missing (tags/filter-tag-names-missing (:tags jarvis-request))]
+    (if (not (empty? tag-names-missing))
+      tag-names-missing)))
+
+
 
 (defapi app
   (swagger-ui)
@@ -37,7 +47,7 @@
     (POST* "/" []
       :return LogEntry
       :body [log-entry-request LogEntryRequest]
-      (if-let [tag-names-missing (tags/filter-tag-names-missing (:tags log-entry-request))]
+      (if-let [tag-names-missing (find-missing-tags log-entry-request)]
         (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
         (ok (logs/post-log-entry! log-entry-request)))))
   (context* "/tags" []
@@ -53,7 +63,7 @@
       :body [tag-request TagRequest]
       (if (tags/tag-exists? (:name tag-request))
         (conflict)
-        (if-let [tag-names-missing (tags/filter-tag-names-missing (:tags tag-request))]
+        (if-let [tag-names-missing (find-missing-tags tag-request)]
           (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
           (ok (tags/post-tag! tag-request))))))
   )
