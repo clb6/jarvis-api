@@ -42,15 +42,14 @@
         (mf/parse-file tag-content)))))
 
 
-(def metadata-keys-tags (list :author :created :version :tags))
+(def metadata-keys-tags (list :name :author :created :version :tags))
 (def create-tag-file (partial mf/create-file metadata-keys-tags))
 
 (defn- create-tag-object
   "Create Tag from TagRequest"
   [tag-request]
   (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (tc/now))]
-    (dissoc (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)
-            :name)))
+    (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)))
 
 (s/defn post-tag! :- Tag
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the

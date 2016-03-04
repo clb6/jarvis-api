@@ -17,16 +17,22 @@
 
 ; Tried to use the `keys` method from the schema but the sort order is not
 ; predictable. Maybe use two separate vectors to construct the schema via zip.
-(def metadata-keys-log-entries (list :author :created :occurred :version :tags
+(def metadata-keys-log-entries (list :id :author :created :occurred :version :tags
                                      :parent :todo :setting))
 (def create-log-entry-file (partial mf/create-file metadata-keys-log-entries))
+
+(defn- generate-log-id
+  [created]
+  (tc/in-seconds (tc/interval (tc/epoch) created)))
 
 (defn- create-log-entry-object
   "Creates a full LogEntry meaning that fields that are considered optional in
   the request are added into the object."
   [created log-entry-request]
   (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) created)
-        log-entry-object (assoc log-entry-request :created now-isoformat
+        log-entry-object (assoc log-entry-request
+                                :id (generate-log-id created)
+                                :created now-isoformat
                                 :version config/jarvis-log-entry-version)]
     (reduce (fn [target-map k] (if (not (contains? target-map k))
                                  (assoc target-map k nil)))
@@ -38,7 +44,7 @@
 
   Returns the full path"
   [created]
-  (let [log-entry-name (tc/in-seconds (tc/interval (tc/epoch) created))]
+  (let [log-entry-name (generate-log-id created)]
     (format "%s/%s.md" config/jarvis-log-directory log-entry-name)))
 
 (s/defn post-log-entry! :- LogEntry

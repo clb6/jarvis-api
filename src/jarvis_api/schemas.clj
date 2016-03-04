@@ -2,7 +2,9 @@
   (:require [schema.core :as s]))
 
 
-(s/defschema LogEntry { :author String
+; TODO: Change this "id" field to s/Num
+(s/defschema LogEntry { :id s/Str
+                       :author String
                        :created String
                        :occurred String
                        :version String
@@ -22,7 +24,8 @@
                                :body String })
 
 
-(s/defschema Tag { :author s/Str
+(s/defschema Tag { :name s/Str
+                  :author s/Str
                   :created s/Str
                   :version s/Str
                   :tags [s/Str]
