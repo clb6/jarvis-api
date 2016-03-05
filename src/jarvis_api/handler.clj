@@ -4,7 +4,8 @@
             [schema.core :as s]
             [ring.middleware.logger :as log]
             [clj-logging-config.log4j :refer [set-loggers!]]
-            [jarvis-api.schemas :refer [LogEntry LogEntryRequest Tag TagRequest TagPrev]]
+            [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev
+                                        Tag TagRequest TagPrev]]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]))
 
@@ -49,7 +50,14 @@
       :body [log-entry-request LogEntryRequest]
       (if-let [tag-names-missing (find-missing-tags log-entry-request)]
         (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
-        (ok (logs/post-log-entry! log-entry-request)))))
+        (ok (logs/post-log-entry! log-entry-request))))
+    (PUT* "/_migrate/:id" [id]
+        :return LogEntry
+        :body [log-entry-to-migrate LogEntryPrev]
+        ; TODO: Validate the previous log entry object
+        (if (logs/log-entry-exists? id)
+          (conflict)
+          (ok (logs/migrate-log-entry! id log-entry-to-migrate)))))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"

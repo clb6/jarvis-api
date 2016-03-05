@@ -1,10 +1,17 @@
 (ns jarvis-api.resources.logentries
-  (:require [clj-time.core :as tc]
+  (:require [clojure.string :as cs]
+            [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [LogEntry LogEntryRequest]]
+            [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]))
+
+
+(defn log-entry-exists?
+  [id]
+  (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
+    (.exists (clojure.java.io/as-file log-entry-path))))
 
 
 (s/defn get-log-entry! :- LogEntry
@@ -54,4 +61,39 @@
         log-entry-path (generate-log-entry-path created)
         log-entry-object (create-log-entry-object created log-entry-request)]
     (spit log-entry-path (create-log-entry-file log-entry-object))
+    log-entry-object))
+
+
+(defn- migrate-log-entry-object
+  "Take in any older version of a log entry object and update it"
+  [id log-entry-to-migrate]
+  (letfn [(set-field-default-maybe [log-entry metadata-key default]
+            (if (not (contains? log-entry metadata-key))
+              (assoc log-entry metadata-key default)
+              log-entry))
+          (add-id [log-entry]
+            (set-field-default-maybe log-entry :id id))
+          (add-occurred [log-entry]
+            (set-field-default-maybe log-entry :occurred "1970-01-01T00:00:00"))
+          (update-version [log-entry]
+            (assoc log-entry :version config/jarvis-log-entry-version))
+          (add-parent [log-entry]
+            (set-field-default-maybe log-entry :parent nil))
+          (add-todo [log-entry]
+            (set-field-default-maybe log-entry :todo nil))
+          (add-setting [log-entry]
+            (set-field-default-maybe log-entry :setting "N/A"))]
+    (-> log-entry-to-migrate
+      add-id
+      add-occurred
+      update-version
+      add-parent
+      add-todo
+      add-setting)))
+
+(s/defn migrate-log-entry! :- LogEntry
+  [id :- s/Str log-entry-to-migrate :- LogEntryPrev]
+  (let [log-entry-file-path (format "%s/%s.md" config/jarvis-log-directory id)
+        log-entry-object (migrate-log-entry-object id log-entry-to-migrate)]
+    (spit log-entry-file-path (create-log-entry-file log-entry-object))
     log-entry-object))
