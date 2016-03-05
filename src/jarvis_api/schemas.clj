@@ -35,3 +35,9 @@
                          :author s/Str
                          :tags [s/Str]
                          :body s/Str })
+
+(s/defschema TagPrev { :author s/Str
+                      :created s/Str
+                      :version s/Str
+                      :tags [s/Str]
+                      :body s/Str })

@@ -2,7 +2,7 @@
   (:require [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [Tag TagRequest]]
+            [jarvis-api.schemas :refer [Tag TagRequest TagPrev]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]))
 
@@ -62,3 +62,12 @@
         (spit tag-file-path (create-tag-file tag-object))
         tag-object))))
 
+
+(s/defn migrate-tag! :- Tag
+  "Migrate the previous tag object from a former schema to the new schema"
+  [tag-name :- s/Str tag-to-migrate :- TagPrev]
+  (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)
+        tag-object (assoc tag-to-migrate :name tag-name
+                          :version config/jarvis-tag-version)]
+    (spit tag-file-path (create-tag-file tag-object))
+    tag-object))
