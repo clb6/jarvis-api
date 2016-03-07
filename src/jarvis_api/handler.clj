@@ -41,6 +41,8 @@
                      {searchterm :- String ""}]
       (ok (query-log-entries tag searchterm)))
     (GET* "/:id" [id]
+      ; Don't know why BigInteger is not acceptable.
+      :path-params [id :- Long]
       :return LogEntry
       (if-let [log-entry (logs/get-log-entry! id)]
         (ok log-entry)
@@ -52,13 +54,13 @@
         (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
         (ok (logs/post-log-entry! log-entry-request))))
     (PUT* "/:id/migrate" [id]
-        :path-params [id :- Long]
-        :return LogEntry
-        :body [log-entry-to-migrate LogEntryPrev]
-        ; TODO: Validate the previous log entry object
-        (if (logs/log-entry-exists? id)
-          (conflict)
-          (ok (logs/migrate-log-entry! id log-entry-to-migrate)))))
+      :path-params [id :- Long]
+      :return LogEntry
+      :body [log-entry-to-migrate LogEntryPrev]
+      ; TODO: Validate the previous log entry object
+      (if (logs/log-entry-exists? id)
+        (conflict)
+        (ok (logs/migrate-log-entry! id log-entry-to-migrate)))))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"

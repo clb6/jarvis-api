@@ -8,17 +8,17 @@
             [jarvis-api.markdown_filer :as mf]))
 
 
-(defn log-entry-exists?
-  [id]
-  (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
+(s/defn log-entry-exists?
+  [id :- BigInteger]
+  (let [log-entry-path (format "%s/%d.md" config/jarvis-log-directory id)]
     (.exists (clojure.java.io/as-file log-entry-path))))
 
 (s/defn get-log-entry! :- LogEntry
   "Return web response where if ok, returns a log entry object"
-  [id :- String]
-  (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
-    (if (.exists (clojure.java.io/as-file log-entry-path))
-      (mf/parse-file (slurp log-entry-path)))))
+  [id :- BigInteger]
+  (let [log-entry-path (format "%s/%d.md" config/jarvis-log-directory id)]
+    (if (log-entry-exists? id)
+      (update-in (mf/parse-file (slurp log-entry-path)) [:id] biginteger))))
 
 
 ; Tried to use the `keys` method from the schema but the sort order is not

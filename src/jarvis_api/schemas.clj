@@ -2,8 +2,7 @@
   (:require [schema.core :as s]))
 
 
-; TODO: Change this "id" field to s/Num
-(s/defschema LogEntry { :id s/Str
+(s/defschema LogEntry { :id s/Num
                        :author String
                        :created String
                        :occurred String
