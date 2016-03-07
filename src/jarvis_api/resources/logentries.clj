@@ -13,7 +13,6 @@
   (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
     (.exists (clojure.java.io/as-file log-entry-path))))
 
-
 (s/defn get-log-entry! :- LogEntry
   "Return web response where if ok, returns a log entry object"
   [id :- String]
@@ -42,7 +41,8 @@
                                 :created now-isoformat
                                 :version config/jarvis-log-entry-version)]
     (reduce (fn [target-map k] (if (not (contains? target-map k))
-                                 (assoc target-map k nil)))
+                                 (assoc target-map k nil)
+                                 target-map))
             log-entry-object
             [:parent :todo])))
 
