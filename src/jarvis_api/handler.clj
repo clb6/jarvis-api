@@ -51,7 +51,7 @@
       (if-let [tag-names-missing (find-missing-tags log-entry-request)]
         (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
         (ok (logs/post-log-entry! log-entry-request))))
-    (PUT* "/_migrate/:id" [id]
+    (PUT* "/:id/migrate" [id]
         :path-params [id :- Long]
         :return LogEntry
         :body [log-entry-to-migrate LogEntryPrev]
@@ -75,7 +75,7 @@
         (if-let [tag-names-missing (find-missing-tags tag-request)]
           (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
           (ok (tags/post-tag! tag-request)))))
-    (PUT* "/_migrate/:tag-name" [tag-name]
+    (PUT* "/:tag-name/migrate" [tag-name]
         :return Tag
         :body [tag-to-migrate TagPrev]
         ; TODO: Validate the previous tag object
