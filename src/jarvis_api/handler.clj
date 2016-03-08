@@ -52,6 +52,7 @@
         (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
         (ok (logs/post-log-entry! log-entry-request))))
     (PUT* "/_migrate/:id" [id]
+        :path-params [id :- Long]
         :return LogEntry
         :body [log-entry-to-migrate LogEntryPrev]
         ; TODO: Validate the previous log entry object
