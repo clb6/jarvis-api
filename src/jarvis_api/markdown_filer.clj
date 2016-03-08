@@ -14,7 +14,10 @@
                          (assoc target-map ((comp keyword cs/lower-case) k) v))
                        {}
                        metadata-tuples)
-               [:tags] #(cs/split %1 #", "))))
+               [:tags]
+               (fn [tags]
+                 "Try to split tags when there are tags"
+                 (if tags (cs/split tags #", ") [])))))
 
 (defn- markdown-to-html-images
   "Takes a body of markdown text and replaces the image syntax with html image
