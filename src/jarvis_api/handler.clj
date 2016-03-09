@@ -77,6 +77,14 @@
         (if-let [tag-names-missing (find-missing-tags tag-request)]
           (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
           (ok (tags/post-tag! tag-request)))))
+    (PUT* "/:tag-name" [tag-name]
+        :return Tag
+        :body [tag-updated Tag]
+        (if (tags/tag-exists? tag-name)
+          (if (tags/valid-tag? tag-name tag-updated)
+            (ok (tags/put-tag! tag-name tag-updated))
+            (bad-request))
+          (not-found)))
     (PUT* "/:tag-name/migrate" [tag-name]
         :return Tag
         :body [tag-to-migrate TagPrev]

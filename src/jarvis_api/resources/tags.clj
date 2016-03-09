@@ -45,29 +45,44 @@
 (def metadata-keys-tags (list :name :author :created :version :tags))
 (def create-tag-file (partial mf/create-file metadata-keys-tags))
 
+(defn- write-tag-object!
+  [tag-name tag-object]
+  (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
+    (spit tag-file-path (create-tag-file tag-object))
+    tag-object))
+
 (defn- create-tag-object
   "Create Tag from TagRequest"
   [tag-request]
   (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (tc/now))]
     (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)))
 
+
 (s/defn post-tag! :- Tag
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
   tag file format."
   [tag-request :- TagRequest]
-  (let [tag-name (get tag-request :name)
-        tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
+  (let [tag-name (get tag-request :name)]
     (if (not (tag-exists? tag-name))
       (let [tag-object (create-tag-object tag-request)]
-        (spit tag-file-path (create-tag-file tag-object))
-        tag-object))))
+        (write-tag-object! tag-name tag-object)))))
+
+
+(s/defn valid-tag?
+  "TODO: Actually check the Tag object. Might want to consider using arity to be
+  able to check just the Tag."
+  [tag-name :- s/Str tag-to-check :- Tag]
+  (= tag-name (:name tag-to-check)))
+
+
+(s/defn put-tag! :- Tag
+  [tag-name :- s/Str tag-updated :- Tag]
+  (write-tag-object! tag-name tag-updated))
 
 
 (s/defn migrate-tag! :- Tag
   "Migrate the previous tag object from a former schema to the new schema"
   [tag-name :- s/Str tag-to-migrate :- TagPrev]
-  (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)
-        tag-object (assoc tag-to-migrate :name tag-name
+  (let [tag-object (assoc tag-to-migrate :name tag-name
                           :version config/jarvis-tag-version)]
-    (spit tag-file-path (create-tag-file tag-object))
-    tag-object))
+    (write-tag-object! tag-name tag-object)))
