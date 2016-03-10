@@ -53,6 +53,13 @@
       (if-let [tag-names-missing (find-missing-tags log-entry-request)]
         (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
         (ok (logs/post-log-entry! log-entry-request))))
+    (PUT* "/:id" [id]
+      :path-params [id :- Long]
+      :return LogEntry
+      :body [log-entry-updated LogEntry]
+      (if (logs/valid-log-entry? id log-entry-updated)
+        (ok (logs/put-log-entry! id log-entry-updated))
+        (bad-request)))
     (PUT* "/:id/migrate" [id]
       :path-params [id :- Long]
       :return LogEntry

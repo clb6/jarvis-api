@@ -31,6 +31,12 @@
   [created]
   (tc/in-seconds (tc/interval (tc/epoch) created)))
 
+(defn- write-log-entry-object!
+  [id log-entry-object]
+  (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
+    (spit log-entry-path (create-log-entry-file log-entry-object))
+    log-entry-object))
+
 (defn- create-log-entry-object
   "Creates a full LogEntry meaning that fields that are considered optional in
   the request are added into the object."
@@ -46,22 +52,24 @@
             log-entry-object
             [:parent :todo])))
 
-(defn- generate-log-entry-path
-  "The file name is  simply the epoch time of the created clj-time/datetime.
-
-  Returns the full path"
-  [created]
-  (let [log-entry-name (generate-log-id created)]
-    (format "%s/%s.md" config/jarvis-log-directory log-entry-name)))
 
 (s/defn post-log-entry! :- LogEntry
   "Post a new log entry where new entries are appended."
   [log-entry-request :- LogEntryRequest]
   (let [created (tc/now)
-        log-entry-path (generate-log-entry-path created)
         log-entry-object (create-log-entry-object created log-entry-request)]
-    (spit log-entry-path (create-log-entry-file log-entry-object))
-    log-entry-object))
+    (write-log-entry-object! (generate-log-id created) log-entry-object)))
+
+
+(s/defn valid-log-entry?
+  "TODO: Actually check the LogEntry object."
+  [id :- BigInteger log-entry-to-check :- LogEntry]
+  (= id (:id log-entry-to-check)))
+
+
+(s/defn put-log-entry!
+  [id :- BigInteger log-entry-updated :- LogEntry]
+  (write-log-entry-object! id log-entry-updated))
 
 
 (defn- migrate-log-entry-object
@@ -93,7 +101,5 @@
 
 (s/defn migrate-log-entry! :- LogEntry
   [id :- s/Str log-entry-to-migrate :- LogEntryPrev]
-  (let [log-entry-file-path (format "%s/%s.md" config/jarvis-log-directory id)
-        log-entry-object (migrate-log-entry-object id log-entry-to-migrate)]
-    (spit log-entry-file-path (create-log-entry-file log-entry-object))
-    log-entry-object))
+  (let [log-entry-object (migrate-log-entry-object id log-entry-to-migrate)]
+    (write-log-entry-object! id log-entry-object)))
