@@ -23,6 +23,11 @@
     (if (not (empty? tag-names-missing))
       tag-names-missing)))
 
+(defn- wrap-verify-tags
+  [handler jarvis-request]
+  (if-let [tag-names-missing (find-missing-tags jarvis-request)]
+    (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
+    (handler jarvis-request)))
 
 
 (defapi app
@@ -48,18 +53,20 @@
         (ok log-entry)
         (not-found)))
     (POST* "/" []
-      :return LogEntry
-      :body [log-entry-request LogEntryRequest]
-      (if-let [tag-names-missing (find-missing-tags log-entry-request)]
-        (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
-        (ok (logs/post-log-entry! log-entry-request))))
+           :return LogEntry
+           :body [log-entry-request LogEntryRequest]
+           (wrap-verify-tags (fn [log-entry-request]
+                               (ok (logs/post-log-entry! log-entry-request)))
+                             log-entry-request))
     (PUT* "/:id" [id]
-      :path-params [id :- Long]
-      :return LogEntry
-      :body [log-entry-updated LogEntry]
-      (if (logs/valid-log-entry? id log-entry-updated)
-        (ok (logs/put-log-entry! id log-entry-updated))
-        (bad-request)))
+          :path-params [id :- Long]
+          :return LogEntry
+          :body [log-entry-updated LogEntry]
+          (wrap-verify-tags (fn [log-entry-updated]
+                              (if (logs/valid-log-entry? id log-entry-updated)
+                                (ok (logs/put-log-entry! id log-entry-updated))
+                                (bad-request)))
+                            log-entry-updated))
     (PUT* "/:id/migrate" [id]
       :path-params [id :- Long]
       :return LogEntry
@@ -77,21 +84,23 @@
         (ok (tags/get-tag! tag-name))
         (not-found)))
     (POST* "/" []
-      :return Tag
-      :body [tag-request TagRequest]
-      (if (tags/tag-exists? (:name tag-request))
-        (conflict)
-        (if-let [tag-names-missing (find-missing-tags tag-request)]
-          (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
-          (ok (tags/post-tag! tag-request)))))
+           :return Tag
+           :body [tag-request TagRequest]
+           (wrap-verify-tags (fn [tag-request]
+                               (if (tags/tag-exists? (:name tag-request))
+                                 (conflict)
+                                 (ok (tags/post-tag! tag-request))))
+                             tag-request))
     (PUT* "/:tag-name" [tag-name]
-        :return Tag
-        :body [tag-updated Tag]
-        (if (tags/tag-exists? tag-name)
-          (if (tags/valid-tag? tag-name tag-updated)
-            (ok (tags/put-tag! tag-name tag-updated))
-            (bad-request))
-          (not-found)))
+          :return Tag
+          :body [tag-updated Tag]
+          (wrap-verify-tags (fn [tag-updated]
+                              (if (tags/tag-exists? tag-name)
+                                (if (tags/valid-tag? tag-name tag-updated)
+                                  (ok (tags/put-tag! tag-name tag-updated))
+                                  (bad-request))
+                                (not-found)))
+                            tag-updated))
     (PUT* "/:tag-name/migrate" [tag-name]
         :return Tag
         :body [tag-to-migrate TagPrev]
