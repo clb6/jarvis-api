@@ -6,7 +6,7 @@
             [jarvis-api.schemas :refer [Tag TagRequest TagPrev]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.elasticsearch :as jes]))
+            [jarvis-api.data_access :as jda]))
 
 
 (defn- fetch-tag-files!
@@ -50,10 +50,8 @@
 (defn- write-tag-object!
   [tag-name tag-object]
   (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
-    ; TODO: Handle unexpected errors and parseable errors
-    (jes/put-jarvis-document "tag" (cs/lower-case tag-name) tag-object)
-    (spit tag-file-path (create-tag-file tag-object))
-    tag-object))
+    (jda/write-jarvis-document! "tags" tag-file-path (cs/lower-case tag-name)
+                              tag-object create-tag-file)))
 
 (defn- create-tag-object
   "Create Tag from TagRequest"
