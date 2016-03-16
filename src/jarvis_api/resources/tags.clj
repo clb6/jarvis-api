@@ -1,10 +1,12 @@
 (ns jarvis-api.resources.tags
-  (:require [clj-time.core :as tc]
+  (:require [clojure.string :as cs]
+            [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
             [jarvis-api.schemas :refer [Tag TagRequest TagPrev]]
             [jarvis-api.config :as config]
-            [jarvis-api.markdown_filer :as mf]))
+            [jarvis-api.markdown_filer :as mf]
+            [jarvis-api.elasticsearch :as jes]))
 
 
 (defn- fetch-tag-files!
@@ -16,9 +18,9 @@
   "Function extracts the Java File with a matching name which means matches by a
   case-insensitive version of the file name. Returns only the first match."
   [tag-name tag-files]
-  (let [tag-name (clojure.string/lower-case tag-name)]
+  (let [tag-name (cs/lower-case tag-name)]
     (letfn [(tag-file-to-name [tag-file]
-              ((comp clojure.string/lower-case
+              ((comp cs/lower-case
                      #(clojure.string/replace %1 #".md" ""))
                (.getName tag-file)))]
     (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
@@ -48,6 +50,8 @@
 (defn- write-tag-object!
   [tag-name tag-object]
   (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
+    ; TODO: Handle unexpected errors and parseable errors
+    (jes/put-jarvis-document "tag" (cs/lower-case tag-name) tag-object)
     (spit tag-file-path (create-tag-file tag-object))
     tag-object))
 
