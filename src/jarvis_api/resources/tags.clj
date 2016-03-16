@@ -58,16 +58,6 @@
     (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)))
 
 
-(s/defn post-tag! :- Tag
-  "Takes a TagRequest converts to a Tag which is written to the filesystem in the
-  tag file format."
-  [tag-request :- TagRequest]
-  (let [tag-name (get tag-request :name)]
-    (if (not (tag-exists? tag-name))
-      (let [tag-object (create-tag-object tag-request)]
-        (write-tag-object! tag-name tag-object)))))
-
-
 (s/defn valid-tag?
   "TODO: Actually check the Tag object. Might want to consider using arity to be
   able to check just the Tag."
@@ -78,6 +68,13 @@
 (s/defn put-tag! :- Tag
   [tag-name :- s/Str tag-updated :- Tag]
   (write-tag-object! tag-name tag-updated))
+
+
+(s/defn post-tag! :- Tag
+  "Takes a TagRequest converts to a Tag which is written to the filesystem in the
+  tag file format."
+  [tag-request :- TagRequest]
+  (put-tag! (:name tag-request) (create-tag-object tag-request)))
 
 
 (s/defn migrate-tag! :- Tag
