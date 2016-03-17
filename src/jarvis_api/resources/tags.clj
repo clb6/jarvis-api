@@ -50,8 +50,8 @@
 (defn- write-tag-object!
   [tag-name tag-object]
   (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
-    (jda/write-jarvis-document! "tags" tag-file-path (cs/lower-case tag-name)
-                              tag-object create-tag-file)))
+    (jda/write-jarvis-document! "tags" tag-file-path create-tag-file
+                                (cs/lower-case tag-name) tag-object)))
 
 (defn- create-tag-object
   "Create Tag from TagRequest"
