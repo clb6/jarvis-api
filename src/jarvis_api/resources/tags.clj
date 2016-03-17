@@ -25,23 +25,21 @@
                (.getName tag-file)))]
     (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
 
+
+(s/defn get-tag! :- Tag
+  "Returns web response where it will return a tag object if a tag is found"
+  [tag-name :- String]
+  (jda/get-jarvis-document! "tags" (cs/lower-case tag-name)))
+
 (defn tag-exists?
   "Case-insensitive check of whether a tag already exists"
   [tag-name]
-  ((comp not nil?) (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))))
+  ((comp not nil?) (get-tag! tag-name)))
 
 (s/defn filter-tag-names-missing :- [s/Str]
   "Given a list of tag names, returns the list of tag names that are missing"
   [tag-names :- [s/Str]]
   (filter #(not (tag-exists? %1)) tag-names))
-
-(s/defn get-tag! :- Tag
-  "Returns web response where it will return a tag object if a tag is found"
-  [tag-name :- String]
-  (let [tag-file (filter-tag-files-by-tag-name tag-name (fetch-tag-files!))]
-    (if tag-file
-      (let [tag-content (slurp tag-file)]
-        (mf/parse-file tag-content)))))
 
 
 (def metadata-keys-tags (list :name :author :created :version :tags))

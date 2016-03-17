@@ -37,3 +37,7 @@
             (println (str "Error rolling back: " (.getMessage e)))))
         ; TODO: Remove this throw and handle better at higher level
         (throw e)))))
+
+(defn get-jarvis-document!
+  [document-type document-id]
+  (jes/get-jarvis-document document-type document-id))
