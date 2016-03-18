@@ -5,7 +5,8 @@
                  [metosin/compojure-api "0.22.0"]
                  [ring.middleware.logger "0.5.0"]
                  [clj-logging-config "1.9.12"]
-                 [clojurewerkz/elastisch "2.2.1"]]
+                 [clojurewerkz/elastisch "2.2.1"]
+                 [org.clojure/tools.logging "0.3.1"]]
   :ring {:init jarvis-api.handler/init-app
          :handler jarvis-api.handler/app-with-logging}
   :uberjar-name "server.jar"

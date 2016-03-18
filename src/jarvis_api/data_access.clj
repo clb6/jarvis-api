@@ -1,6 +1,7 @@
 (ns jarvis-api.data_access
   (:require [jarvis-api.elasticsearch :as jes]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.logging :as log]))
 
 
 (defn- delete-jarvis-document!
@@ -24,7 +25,7 @@
                                           document-id
                                           document)
       (catch Exception e
-        (println (str "Error writing document: " (.getMessage e)))
+        (log/error (str "Error writing document: " (.getMessage e)))
         ; Try to rollback changes
         (try
           (if document-prev
@@ -34,7 +35,7 @@
                                                 document-prev)
             (delete-jarvis-document! document-type file-path document-id))
           (catch Exception e
-            (println (str "Error rolling back: " (.getMessage e)))))
+            (log/error (str "Error rolling back: " (.getMessage e)))))
         ))))
 
 (defn get-jarvis-document!
