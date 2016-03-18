@@ -35,8 +35,7 @@
             (delete-jarvis-document! document-type file-path document-id))
           (catch Exception e
             (println (str "Error rolling back: " (.getMessage e)))))
-        ; TODO: Remove this throw and handle better at higher level
-        (throw e)))))
+        ))))
 
 (defn get-jarvis-document!
   [document-type document-id]

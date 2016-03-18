@@ -29,6 +29,12 @@
     (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
     (handler jarvis-request)))
 
+(defn- create-web-response
+  [jarvis-object]
+  (if jarvis-object
+    (ok jarvis-object)
+    (internal-server-error)))
+
 
 (defapi app
   (swagger-ui)
@@ -79,17 +85,17 @@
     :tags ["tags"]
     :summary "API to handle tags"
     (GET* "/:tag-name" [tag-name]
-      :return Tag
-      (if (tags/tag-exists? tag-name)
-        (ok (tags/get-tag! tag-name))
-        (not-found)))
+          :return Tag
+          (if (tags/tag-exists? tag-name)
+            (create-web-response (tags/get-tag! tag-name))
+            (not-found)))
     (POST* "/" []
            :return Tag
            :body [tag-request TagRequest]
            (wrap-verify-tags (fn [tag-request]
                                (if (tags/tag-exists? (:name tag-request))
                                  (conflict)
-                                 (ok (tags/post-tag! tag-request))))
+                                 (create-web-response (tags/post-tag! tag-request))))
                              tag-request))
     (PUT* "/:tag-name" [tag-name]
           :return Tag
@@ -97,17 +103,18 @@
           (wrap-verify-tags (fn [tag-updated]
                               (if (tags/tag-exists? tag-name)
                                 (if (tags/valid-tag? tag-name tag-updated)
-                                  (ok (tags/put-tag! tag-name tag-updated))
+                                  (create-web-response (tags/put-tag! tag-name
+                                                                      tag-updated))
                                   (bad-request))
                                 (not-found)))
                             tag-updated))
     (PUT* "/:tag-name/migrate" [tag-name]
-        :return Tag
-        :body [tag-to-migrate TagPrev]
-        ; TODO: Validate the previous tag object
-        (if (tags/tag-exists? tag-name)
-          (conflict)
-          (ok (tags/migrate-tag! tag-name tag-to-migrate)))))
+          :return Tag
+          :body [tag-to-migrate TagPrev]
+          ; TODO: Validate the previous tag object
+          (if (tags/tag-exists? tag-name)
+            (conflict)
+            (create-web-response (tags/migrate-tag! tag-name tag-to-migrate)))))
   )
 
 
