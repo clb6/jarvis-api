@@ -5,20 +5,19 @@
             [schema.core :as s]
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev]]
             [jarvis-api.config :as config]
-            [jarvis-api.markdown_filer :as mf]))
+            [jarvis-api.markdown_filer :as mf]
+            [jarvis-api.data_access :as jda]))
 
-
-(s/defn log-entry-exists?
-  [id :- BigInteger]
-  (let [log-entry-path (format "%s/%d.md" config/jarvis-log-directory id)]
-    (.exists (clojure.java.io/as-file log-entry-path))))
 
 (s/defn get-log-entry! :- LogEntry
   "Return web response where if ok, returns a log entry object"
   [id :- BigInteger]
-  (let [log-entry-path (format "%s/%d.md" config/jarvis-log-directory id)]
-    (if (log-entry-exists? id)
-      (update-in (mf/parse-file (slurp log-entry-path)) [:id] biginteger))))
+  (if-let [log-entry (jda/get-jarvis-document! "logentries" id)]
+    (update-in log-entry [:id] biginteger)))
+
+(s/defn log-entry-exists?
+  [id :- BigInteger]
+  ((comp not nil?) (get-log-entry! id)))
 
 
 ; Tried to use the `keys` method from the schema but the sort order is not
@@ -34,8 +33,8 @@
 (defn- write-log-entry-object!
   [id log-entry-object]
   (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
-    (spit log-entry-path (create-log-entry-file log-entry-object))
-    log-entry-object))
+    (jda/write-jarvis-document! "logentries" log-entry-path create-log-entry-file
+                                id log-entry-object)))
 
 (defn- create-log-entry-object
   "Creates a full LogEntry meaning that fields that are considered optional in
