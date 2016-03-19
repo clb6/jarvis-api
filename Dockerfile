@@ -9,7 +9,7 @@ ENV LEIN_ROOT true
 ADD . /opt/jarvis-api
 RUN cd /opt/jarvis-api && lein do clean, ring uberjar
 
-ENV JARVIS_DIR_ROOT /opt/Jarvis
+ENV JARVIS_DIR_ROOT /opt/jarvis
 
 EXPOSE 3000
 
