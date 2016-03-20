@@ -21,7 +21,7 @@
                                :setting String
                                :body String })
 
-(s/defschema LogEntryPrev { (s/optional-key :id) s/Str
+(s/defschema LogEntryPrev { (s/optional-key :id) s/Num
                            :author String
                            :created String
                            (s/optional-key :occurred) String
@@ -45,7 +45,8 @@
                          :tags [s/Str]
                          :body s/Str })
 
-(s/defschema TagPrev { :author s/Str
+(s/defschema TagPrev { (s/optional-key :name) s/Str
+                      :author s/Str
                       :created s/Str
                       :version s/Str
                       :tags [s/Str]

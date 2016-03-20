@@ -6,7 +6,8 @@
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.data_access :as jda]))
+            [jarvis-api.data_access :as jda]
+            [jarvis-api.util :as util]))
 
 
 (s/defn get-log-entry! :- LogEntry
@@ -74,22 +75,18 @@
 (defn- migrate-log-entry-object
   "Take in any older version of a log entry object and update it"
   [id log-entry-to-migrate]
-  (letfn [(set-field-default-maybe [log-entry metadata-key default]
-            (if (not (contains? log-entry metadata-key))
-              (assoc log-entry metadata-key default)
-              log-entry))
-          (add-id [log-entry]
-            (set-field-default-maybe log-entry :id id))
+  (letfn [(add-id [log-entry]
+            (util/set-field-default-maybe log-entry :id id))
           (add-occurred [log-entry]
-            (set-field-default-maybe log-entry :occurred "1970-01-01T00:00:00"))
+            (util/set-field-default-maybe log-entry :occurred "1970-01-01T00:00:00"))
           (update-version [log-entry]
             (assoc log-entry :version config/jarvis-log-entry-version))
           (add-parent [log-entry]
-            (set-field-default-maybe log-entry :parent nil))
+            (util/set-field-default-maybe log-entry :parent nil))
           (add-todo [log-entry]
-            (set-field-default-maybe log-entry :todo nil))
+            (util/set-field-default-maybe log-entry :todo nil))
           (add-setting [log-entry]
-            (set-field-default-maybe log-entry :setting "N/A"))]
+            (util/set-field-default-maybe log-entry :setting "N/A"))]
     (-> log-entry-to-migrate
       add-id
       add-occurred
@@ -99,6 +96,6 @@
       add-setting)))
 
 (s/defn migrate-log-entry! :- LogEntry
-  [id :- s/Str log-entry-to-migrate :- LogEntryPrev]
+  [id :- BigInteger log-entry-to-migrate :- LogEntryPrev]
   (let [log-entry-object (migrate-log-entry-object id log-entry-to-migrate)]
     (write-log-entry-object! id log-entry-object)))

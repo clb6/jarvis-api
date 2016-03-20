@@ -6,7 +6,8 @@
             [jarvis-api.schemas :refer [Tag TagRequest TagPrev]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.data_access :as jda]))
+            [jarvis-api.data_access :as jda]
+            [jarvis-api.util :as util]))
 
 
 (defn- fetch-tag-files!
@@ -80,6 +81,6 @@
 (s/defn migrate-tag! :- Tag
   "Migrate the previous tag object from a former schema to the new schema"
   [tag-name :- s/Str tag-to-migrate :- TagPrev]
-  (let [tag-object (assoc tag-to-migrate :name tag-name
-                          :version config/jarvis-tag-version)]
-    (write-tag-object! tag-name tag-object)))
+  (write-tag-object! tag-name (assoc (util/set-field-default-maybe tag-to-migrate
+                                                                   :name tag-name)
+                                       :version config/jarvis-tag-version)))
