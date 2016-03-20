@@ -7,9 +7,13 @@
 ; otherwise.
 
 (defn put-jarvis-document
+  "Example response: {:_index jarvis, :_type tags, :_id forecasting, :_version 1,
+  :_shards {:total 2, :successful 1, :failed 0}, :created true}"
   [document-type document-id document]
-  (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
-    (esd/put conn "jarvis" document-type (str document-id) document)))
+  (let [conn (esr/connect config/jarvis-elasticsearch-uri)
+        response (esd/put conn "jarvis" document-type (str document-id) document)]
+    (if (:created response)
+      document)))
 
 (defn get-jarvis-document
   [document-type document-id]

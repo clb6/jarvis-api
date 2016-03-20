@@ -12,9 +12,9 @@
 
 (defn- write-jarvis-document-unsafe!
   [document-type file-path create-file-representation document-id document]
-  (jes/put-jarvis-document document-type document-id document)
-  (spit file-path (create-file-representation document))
-  document)
+  (if-let [document (jes/put-jarvis-document document-type document-id document)]
+    (do (spit file-path (create-file-representation document))
+        document)))
 
 (defn write-jarvis-document!
   [document-type file-path create-file-representation document-id document]
