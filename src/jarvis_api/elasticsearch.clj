@@ -11,8 +11,12 @@
   :_shards {:total 2, :successful 1, :failed 0}, :created true}"
   [document-type document-id document]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)
-        response (esd/put conn "jarvis" document-type (str document-id) document)]
-    (if (:created response)
+        document-id (str document-id)
+        version-prev (:_version (esd/get conn "jarvis" document-type document-id))
+        response (esd/put conn "jarvis" document-type document-id document)]
+    ; Handle both when there hasn't been an existing version and when a new
+    ; version has been pushed.
+    (if (or (:created response) (> (:_version response) version-prev))
       document)))
 
 (defn get-jarvis-document
