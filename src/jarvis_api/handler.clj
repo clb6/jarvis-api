@@ -62,7 +62,8 @@
            :return LogEntry
            :body [log-entry-request LogEntryRequest]
            (wrap-verify-tags (fn [log-entry-request]
-                               (ok (logs/post-log-entry! log-entry-request)))
+                               (create-web-response (logs/post-log-entry!
+                                                      log-entry-request)))
                              log-entry-request))
     (PUT* "/:id" [id]
           :path-params [id :- Long]
@@ -70,7 +71,8 @@
           :body [log-entry-updated LogEntry]
           (wrap-verify-tags (fn [log-entry-updated]
                               (if (logs/valid-log-entry? id log-entry-updated)
-                                (ok (logs/put-log-entry! id log-entry-updated))
+                                (create-web-response (logs/put-log-entry! id
+                                                                          log-entry-updated))
                                 (bad-request)))
                             log-entry-updated))
     (PUT* "/:id/migrate" [id]
@@ -80,7 +82,7 @@
       ; TODO: Validate the previous log entry object
       (if (logs/log-entry-exists? id)
         (conflict)
-        (ok (logs/migrate-log-entry! id log-entry-to-migrate)))))
+        (create-web-response (logs/migrate-log-entry! id log-entry-to-migrate)))))
   (context* "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
