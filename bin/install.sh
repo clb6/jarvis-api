@@ -25,6 +25,10 @@ echo "Tags: $TAGS_DIR"
 mkdir -p $TAGS_DIR
 ln -s $TAGS_DIR $JARVIS_DIR_ROOT/Tags
 
+IMAGES_DIR="$JARVIS_DIR_ROOT/Images"
+echo "Images: $IMAGES_DIR"
+mkdir -p $IMAGES_DIR
+
 ELASTIC_DIR="$JARVIS_DIR_ROOT/Elasticsearch"
 echo "Elasticsearch: $ELASTIC_DIR"
 mkdir -p $ELASTIC_DIR
