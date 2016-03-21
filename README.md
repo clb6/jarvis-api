@@ -18,3 +18,19 @@ java -jar target/server.jar
 ### Packaging as war
 
 `lein ring uberwar`
+
+### Run the application using Docker image
+
+Run the Elasticsearch container first:
+
+```
+docker run -d -v /opt/jarvis/Elasticsearch/:/usr/share/elasticsearch/data -p 9200:9200 --name jarvis-elasticsearch elasticsearch
+```
+
+**Note**: Apparently the last `/` makes a difference.  Docker Elasticsearch when it mounts the volume changes the folder permission to `avahi-autoipd:lpadmin`.  Without the `/` other directories also change permissions.
+
+Now run the jarvis-api linking it to the Elasticsearch container:
+
+```
+docker run -d -v /opt/jarvis:/opt/jarvis -p 3000:3000 --link jarvis-elasticsearch:elasticsearch.jarvis.home --name jarvis-api-container jarvis-api:0.3.0
+```
