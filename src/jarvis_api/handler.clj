@@ -42,7 +42,8 @@
     {:info {:title "Jarvis-api"
             :description "Jarvis data api"}
      :tags [{:name "logentries" :description "handles Jarvis log entries"}
-            {:name "tags" :description "handles Jarvis tags"}]})
+            {:name "tags" :description "handles Jarvis tags"}]
+     :basePath "/jarvis"})
   (context* "/logentries" []
     :tags ["logentries"]
     :summary "API to handle log entries"
