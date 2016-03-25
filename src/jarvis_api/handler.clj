@@ -5,9 +5,10 @@
             [ring.middleware.logger :as log]
             [clj-logging-config.log4j :refer [set-loggers!]]
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev
-                                        Tag TagRequest TagPrev]]
+                                        Tag TagRequest TagPrev DataSummary]]
             [jarvis-api.resources.tags :as tags]
-            [jarvis-api.resources.logentries :as logs]))
+            [jarvis-api.resources.logentries :as logs]
+            [jarvis-api.resources.datasummary :as dsummary]))
 
 
 (defn query-log-entries
@@ -44,6 +45,12 @@
      :tags [{:name "logentries" :description "handles Jarvis log entries"}
             {:name "tags" :description "handles Jarvis tags"}]
      :basePath "/jarvis"})
+  (context* "/datasummary/:data-type" []
+            :summary "Endpoint that provides a summary of Jarvis data type"
+            (GET* "/" [data-type]
+                  :path-params [data-type :- (s/enum :tags :logentries)]
+                  :return DataSummary
+                  (ok (dsummary/create-data-summary data-type))))
   (context* "/logentries" []
     :tags ["logentries"]
     :summary "API to handle log entries"

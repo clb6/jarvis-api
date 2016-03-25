@@ -30,3 +30,8 @@
   [document-type document-id]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
     (esd/delete conn "jarvis" document-type (str document-id))))
+
+(defn count-jarvis-documents
+  [document-type]
+  (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
+    (:count (esd/count conn "jarvis" document-type))))
