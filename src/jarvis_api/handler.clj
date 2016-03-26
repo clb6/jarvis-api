@@ -50,7 +50,7 @@
             (GET* "/" [data-type]
                   :path-params [data-type :- (s/enum :tags :logentries)]
                   :return DataSummary
-                  (ok (dsummary/create-data-summary data-type))))
+                  (ok (dsummary/generate-data-summary data-type))))
   (context* "/logentries" []
     :tags ["logentries"]
     :summary "API to handle log entries"

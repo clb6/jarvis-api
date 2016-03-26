@@ -1,11 +1,29 @@
 (ns jarvis-api.resources.datasummary
-  (:require [jarvis-api.elasticsearch :as es]))
+  (:require [jarvis-api.elasticsearch :as es]
+            [jarvis-api.config :as config]))
 
 
-(defn create-data-summary
+(defn- get-data-type-file-seq
   [data-type]
-  ; Count Elasticsearch
-  ; Count Files
-  { :data-type data-type
-   :status :ok
-   :count (es/count-jarvis-documents data-type)})
+  (let [data-directory (case data-type
+                         :tags config/jarvis-tag-directory
+                         :logentries config/jarvis-log-directory)
+        data-directory-file (clojure.java.io/file data-directory)]
+    (file-seq data-directory-file)))
+
+(defn- count-data-type-files
+  "Fetch the number of files associated with this data type. Must subtract 1
+  because the result of `file-seq` also includes the top-level directory."
+  [data-type]
+  (- (count (get-data-type-file-seq data-type)) 1))
+
+
+(defn generate-data-summary
+  [data-type]
+  (let [file-count (count-data-type-files data-type)
+        doc-count (es/count-jarvis-documents (name data-type))]
+    { :data-type data-type
+      :status (if (= file-count doc-count)
+                :ok
+                :inconsistent)
+      :count doc-count}))
