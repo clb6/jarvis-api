@@ -43,8 +43,7 @@
     {:info {:title "Jarvis-api"
             :description "Jarvis data api"}
      :tags [{:name "logentries" :description "handles Jarvis log entries"}
-            {:name "tags" :description "handles Jarvis tags"}]
-     :basePath "/jarvis"})
+            {:name "tags" :description "handles Jarvis tags"}]})
   (context* "/datasummary/:data-type" []
             :summary "Endpoint that provides a summary of Jarvis data type"
             (GET* "/" [data-type]
