@@ -1,4 +1,4 @@
-(defproject jarvis-api "0.3.0"
+(defproject jarvis-api "0.4.0"
   :description "Data API for Jarvis"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [clj-time "0.11.0"] ; required due to bug in lein-ring
