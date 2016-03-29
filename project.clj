@@ -1,8 +1,8 @@
 (defproject jarvis-api "0.4.0"
   :description "Data API for Jarvis"
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [clj-time "0.11.0"] ; required due to bug in lein-ring
-                 [metosin/compojure-api "0.22.0"]
+                 [metosin/compojure-api "1.0.2"]
                  [ring.middleware.logger "0.5.0"]
                  [clj-logging-config "1.9.12"]
                  [clojurewerkz/elastisch "2.2.1"]

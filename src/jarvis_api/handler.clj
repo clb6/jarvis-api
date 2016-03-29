@@ -38,41 +38,41 @@
 
 
 (defapi app
-  (swagger-ui)
-  (swagger-docs
-    {:info {:title "Jarvis-api"
-            :description "Jarvis data api"}
-     :tags [{:name "logentries" :description "handles Jarvis log entries"}
-            {:name "tags" :description "handles Jarvis tags"}]})
-  (context* "/datasummary/:data-type" []
+  ; TODO: Should revisit and enhance the use of swagger-routes. Use :ui, :spec options
+  ; https://github.com/metosin/compojure-api/wiki/Migration-Guide-to-1.0.0#swagger-routes
+  (swagger-routes
+    { :data { :info { :title "Jarvis-api" :description "Jarvis data api" }
+              :tags [{:name "logentries" :description "handles Jarvis log entries"}
+                     {:name "tags" :description "handles Jarvis tags"}]}})
+  (context "/datasummary/:data-type" []
             :summary "Endpoint that provides a summary of Jarvis data type"
-            (GET* "/" [data-type]
+            (GET "/" [data-type]
                   :path-params [data-type :- (s/enum :tags :logentries)]
                   :return DataSummary
                   (ok (dsummary/generate-data-summary data-type))))
-  (context* "/logentries" []
+  (context "/logentries" []
     :tags ["logentries"]
     :summary "API to handle log entries"
-    (GET* "/" []
+    (GET "/" []
       :return [LogEntry]
       :query-params [{tag :- String ""}
                      {searchterm :- String ""}]
       (ok (query-log-entries tag searchterm)))
-    (GET* "/:id" [id]
+    (GET "/:id" [id]
       ; Don't know why BigInteger is not acceptable.
       :path-params [id :- Long]
       :return LogEntry
       (if-let [log-entry (logs/get-log-entry! id)]
         (ok log-entry)
         (not-found)))
-    (POST* "/" []
+    (POST "/" []
            :return LogEntry
            :body [log-entry-request LogEntryRequest]
            (wrap-verify-tags (fn [log-entry-request]
                                (create-web-response (logs/post-log-entry!
                                                       log-entry-request)))
                              log-entry-request))
-    (PUT* "/:id" [id]
+    (PUT "/:id" [id]
           :path-params [id :- Long]
           :return LogEntry
           :body [log-entry-updated LogEntry]
@@ -82,7 +82,7 @@
                                                                           log-entry-updated))
                                 (bad-request)))
                             log-entry-updated))
-    (PUT* "/:id/migrate" [id]
+    (PUT "/:id/migrate" [id]
       :path-params [id :- Long]
       :return LogEntry
       :body [log-entry-to-migrate LogEntryPrev]
@@ -90,15 +90,15 @@
       (if (logs/log-entry-exists? id)
         (conflict)
         (create-web-response (logs/migrate-log-entry! id log-entry-to-migrate)))))
-  (context* "/tags" []
+  (context "/tags" []
     :tags ["tags"]
     :summary "API to handle tags"
-    (GET* "/:tag-name" [tag-name]
+    (GET "/:tag-name" [tag-name]
           :return Tag
           (if (tags/tag-exists? tag-name)
             (create-web-response (tags/get-tag! tag-name))
             (not-found)))
-    (POST* "/" []
+    (POST "/" []
            :return Tag
            :body [tag-request TagRequest]
            (wrap-verify-tags (fn [tag-request]
@@ -106,7 +106,7 @@
                                  (conflict)
                                  (create-web-response (tags/post-tag! tag-request))))
                              tag-request))
-    (PUT* "/:tag-name" [tag-name]
+    (PUT "/:tag-name" [tag-name]
           :return Tag
           :body [tag-updated Tag]
           (wrap-verify-tags (fn [tag-updated]
@@ -117,7 +117,7 @@
                                   (bad-request))
                                 (not-found)))
                             tag-updated))
-    (PUT* "/:tag-name/migrate" [tag-name]
+    (PUT "/:tag-name/migrate" [tag-name]
           :return Tag
           :body [tag-to-migrate TagPrev]
           ; TODO: Validate the previous tag object
