@@ -1,6 +1,7 @@
 (ns jarvis-api.elasticsearch
   (:require [clojurewerkz.elastisch.rest  :as esr]
             [clojurewerkz.elastisch.rest.document :as esd]
+            [clojurewerkz.elastisch.query :as esq]
             [jarvis-api.config :as config]))
 
 ; Had to force the document-id to be a string because Elasticsearch complains
@@ -35,3 +36,28 @@
   [document-type]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
     (:count (esd/count conn "jarvis" document-type))))
+
+
+(defn add-query-criteria-wildcard
+  "Helper method to build Elasticsearch query request where this method adds a
+  wildcard query to a list of queries that is intended for a bool compound query."
+  ([field value]
+  (add-query-criteria-wildcard field value []))
+  ([field value query-array]
+   (if-not (or (nil? value) (empty? value))
+     (conj query-array (esq/wildcard { field (str "*" value "*") }))
+     query-array)))
+
+(defn query-jarvis-documents
+  "Constrained Elasticsearch querying.
+
+  Returns [total hits]
+
+  TODO: How to enable a diverse set of querying? Right now querying is hardcoded
+  to be `bool` and `must`."
+  [document-type sort-request query-criterias from]
+  (let [conn (esr/connect config/jarvis-elasticsearch-uri)
+        query-request (esq/bool { :must query-criterias })
+        result (esd/search conn "jarvis" document-type :query query-request
+                           :sort sort-request :from from)]
+    [(map :_source (:hits (:hits result))) (get-in result [:hits :total])]))

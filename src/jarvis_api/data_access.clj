@@ -46,3 +46,17 @@
 (defn get-jarvis-document!
   [document-type document-id]
   (jes/get-jarvis-document document-type document-id))
+
+
+(def add-query-criteria-tag-name (partial jes/add-query-criteria-wildcard :name))
+(def add-query-criteria-tags (partial jes/add-query-criteria-wildcard :tags))
+
+(def query-tags (partial jes/query-jarvis-documents "tags" { "name" "asc" }))
+
+(defn get-hits-from-query
+  [query-result]
+  (first query-result))
+
+(defn get-total-hits-from-query
+  [query-result]
+  (second query-result))
