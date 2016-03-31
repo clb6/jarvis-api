@@ -1,11 +1,13 @@
 (ns jarvis-api.handler
   (:require [compojure.api.sweet :refer :all]
+            [clojure.string :as cs]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
             [ring.middleware.logger :as log]
             [clj-logging-config.log4j :refer [set-loggers!]]
+            [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev
-                                        Tag TagRequest TagPrev DataSummary]]
+                                        Tag TagRequest TagPrev DataSummary Link]]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]
             [jarvis-api.resources.datasummary :as dsummary]))
@@ -35,6 +37,15 @@
   (if jarvis-object
     (ok jarvis-object)
     (internal-server-error)))
+
+(defn- wrap-request-add-self-link
+  [handler]
+  (fn add-self-link [{:keys [scheme server-name server-port uri query-params] :as r}]
+    (let [query-string (cs/join "&" (map #(cs/join "=" %1) (seq query-params)))
+          self-uri (ef/uri { :scheme (name scheme) :host server-name :port server-port
+                             :authority (cs/join ":" [server-name, server-port])
+                             :path uri :query query-string})]
+      (handler (assoc r :fully-qualified-uri self-uri)))))
 
 
 (defapi app
@@ -91,8 +102,14 @@
         (conflict)
         (create-web-response (logs/migrate-log-entry! id log-entry-to-migrate)))))
   (context "/tags" []
-    :tags ["tags"]
-    :summary "API to handle tags"
+           :tags ["tags"]
+           :summary "API to handle tags"
+           :middleware [wrap-request-add-self-link]
+           (GET "/" [:as {:keys [fully-qualified-uri]}]
+                 :query-params [{name :- s/Str ""} {tags :- s/Str ""}
+                                {from :- Long 0}]
+                 :return { :items [Tag], :total Long, :links [Link] }
+                 (ok (tags/query-tags name tags from fully-qualified-uri)))
     (GET "/:tag-name" [tag-name]
           :return Tag
           (if (tags/tag-exists? tag-name)
