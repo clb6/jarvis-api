@@ -7,15 +7,18 @@
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
             [jarvis-api.data_access :as jda]
-            [jarvis-api.util :as util]))
+            [jarvis-api.util :as util]
+            [jarvis-api.links :as jl]))
 
 
 (defn query-log-entries
   [tags searchterm from fully-qualified-uri]
-  (let [query-result (vector [] 0)]
+  (let [query-criterias (jda/add-query-criteria-tags tags)
+        query-criterias (jda/add-query-criteria-body searchterm query-criterias)
+        query-result (jda/query-log-entries query-criterias from)]
     { :items (jda/get-hits-from-query query-result)
       :total (jda/get-total-hits-from-query query-result)
-      :links [] }))
+      :links (jl/generate-query-links query-result from fully-qualified-uri) }))
 
 (s/defn get-log-entry! :- LogEntry
   "Return web response where if ok, returns a log entry object"
