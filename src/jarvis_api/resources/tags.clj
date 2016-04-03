@@ -3,27 +3,13 @@
             [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
-            [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [Tag TagRequest TagPrev]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
             [jarvis-api.data_access :as jda]
-            [jarvis-api.util :as util]))
+            [jarvis-api.util :as util]
+            [jarvis-api.links :as jl]))
 
-
-(def default-page-size 10)
-
-(defn calc-prev-from
-  [query-result current-from]
-  current-from)
-
-(defn calc-next-from
-  [query-result current-from]
-  (let [total-hits (jda/get-total-hits-from-query query-result)
-        bump (min (- total-hits current-from) default-page-size)
-        next-from (+ bump current-from)]
-    (if (< next-from total-hits)
-      next-from)))
 
 (defn query-tags
   [tag-name tags from fully-qualified-uri]
@@ -32,10 +18,7 @@
         query-result (jda/query-tags query-criterias from)]
     { :items (jda/get-hits-from-query query-result)
       :total (jda/get-total-hits-from-query query-result)
-      :links (remove nil?
-                     (map #(if-let [from-alt (%1 query-result from)]
-                             { :href (str (ef/param fully-qualified-uri "from" from-alt))
-                               :rel "query" }) [calc-next-from calc-prev-from])) }))
+      :links (jl/generate-query-links query-result from fully-qualified-uri) }))
 
 
 (defn- fetch-tag-files!
