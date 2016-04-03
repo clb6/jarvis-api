@@ -10,6 +10,13 @@
             [jarvis-api.util :as util]))
 
 
+(defn query-log-entries
+  [tags searchterm from fully-qualified-uri]
+  (let [query-result (vector [] 0)]
+    { :items (jda/get-hits-from-query query-result)
+      :total (jda/get-total-hits-from-query query-result)
+      :links [] }))
+
 (s/defn get-log-entry! :- LogEntry
   "Return web response where if ok, returns a log entry object"
   [id :- BigInteger]

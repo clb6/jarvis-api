@@ -13,10 +13,6 @@
             [jarvis-api.resources.datasummary :as dsummary]))
 
 
-(defn query-log-entries
-  [tag search-term]
-  [{:body (str "query: " tag ", " search-term)}])
-
 (defn- find-missing-tags
   "Find the list of tags that do not exist if there are no missing tags then
   return nothing. This method is to work around the poor truthiness evaluation by
@@ -62,13 +58,15 @@
                   :return DataSummary
                   (ok (dsummary/generate-data-summary data-type))))
   (context "/logentries" []
-    :tags ["logentries"]
-    :summary "API to handle log entries"
-    (GET "/" []
-      :return [LogEntry]
-      :query-params [{tag :- String ""}
-                     {searchterm :- String ""}]
-      (ok (query-log-entries tag searchterm)))
+           :tags ["logentries"]
+           :summary "API to handle log entries"
+           :middleware [wrap-request-add-self-link]
+           (GET "/" [:as {:keys [fully-qualified-uri]}]
+                :return [LogEntry]
+                :query-params [{tags :- s/Str ""} {searchterm :- s/Str ""}
+                               {from :- Long 0}]
+                :return { :items [LogEntry], :total Long, :links [Link] }
+                (ok (logs/query-log-entries tags searchterm from fully-qualified-uri)))
     (GET "/:id" [id]
       ; Don't know why BigInteger is not acceptable.
       :path-params [id :- Long]
