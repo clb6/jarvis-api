@@ -51,7 +51,11 @@
 (def add-query-criteria-tag-name (partial jes/add-query-criteria-wildcard :name))
 (def add-query-criteria-tags (partial jes/add-query-criteria-wildcard :tags))
 
+(def add-query-criteria-body (partial jes/add-query-criteria-match :body))
+
 (def query-tags (partial jes/query-jarvis-documents "tags" { "name" "asc" }))
+(def query-log-entries (partial jes/query-jarvis-documents "logentries"
+                               { "occurred" "desc" }))
 
 (defn get-hits-from-query
   [query-result]
