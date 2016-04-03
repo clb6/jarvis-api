@@ -11,8 +11,10 @@
 
 (defn- calc-prev-from
   [query-result current-from fully-qualified-uri]
-  { :href (construct-new-uri-string fully-qualified-uri current-from)
-    :rel "prev" })
+  (let [prev-from (- current-from default-page-size)]
+    (if (>= prev-from 0)
+      { :href (construct-new-uri-string fully-qualified-uri prev-from)
+        :rel "prev" })))
 
 (defn- calc-next-from
   [query-result current-from fully-qualified-uri]
