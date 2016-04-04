@@ -39,9 +39,19 @@ echo "Before"
 showSummary $2
 echo ""
 
+# Restore
 rm -Rf $TARGET_JARVIS_PREV_DIR
 mv $TARGET_JARVIS_DIR $TARGET_JARVIS_PREV_DIR
 tar -xf $1 -C $TARGET_DIR
+
+# Restart the dependent services. Noticed that the count is stale if you don't do
+# this.
+echo "Restarting services"
+docker restart jarvis-elasticsearch
+docker restart jarvis-api-container
+
+# Give the services a chance to come up.
+sleep 10s
 
 echo "After"
 showSummary $2
