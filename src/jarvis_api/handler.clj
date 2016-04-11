@@ -104,10 +104,10 @@
            :summary "API to handle tags"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                 :query-params [{tagName :- s/Str ""} {assocTags :- s/Str ""}
+                 :query-params [{name :- s/Str ""} {tags :- s/Str ""}
                                 {from :- Long 0}]
                  :return { :items [Tag], :total Long, :links [Link] }
-                 (ok (tags/query-tags tagName assocTags from fully-qualified-uri)))
+                 (ok (tags/query-tags name tags from fully-qualified-uri)))
     (GET "/:tag-name" [tag-name]
           :return Tag
           (if (tags/tag-exists? tag-name)
