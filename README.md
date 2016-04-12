@@ -45,3 +45,22 @@ java -jar target/server.jar
 
 `lein ring uberwar`
 
+## Snapshots
+
+### Backing up
+
+Snapshots of the jarvis-api can be made using the `bin/snapshot_backup.sh` script.  Run:
+
+```
+sudo bin/snapshot_backup.sh
+```
+
+A new snapshot tarball will be created in the `/opt/jarvis_snapshots` directory.
+
+### Restoring
+
+Snapshots can be used to update jarvis-api by using the `bin/snapshot_restore.sh` script.  Run:
+
+```
+sudo bin/snapshot_restore.sh <path of snapshot tarball>
+```
