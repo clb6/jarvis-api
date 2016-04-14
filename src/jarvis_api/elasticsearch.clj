@@ -1,6 +1,7 @@
 (ns jarvis-api.elasticsearch
   (:require [clojurewerkz.elastisch.rest  :as esr]
             [clojurewerkz.elastisch.rest.document :as esd]
+            [clojurewerkz.elastisch.rest.response :refer [aggregations-from]]
             [clojurewerkz.elastisch.query :as esq]
             [jarvis-api.config :as config]))
 
@@ -69,3 +70,13 @@
         result (esd/search conn "jarvis" document-type :query query-request
                            :sort sort-request :from from)]
     [(map :_source (:hits (:hits result))) (get-in result [:hits :total])]))
+
+
+(defn aggregate-jarvis-documents
+  [document-type aggregation-query]
+  (let [conn (esr/connect config/jarvis-elasticsearch-uri)
+        ; :search_type "count" is used so that "hits" are not returned
+        result (esd/search conn "jarvis" document-type :aggregations aggregation-query
+                           :query (esq/match-all) :search_type "count")]
+    (aggregations-from result)))
+
