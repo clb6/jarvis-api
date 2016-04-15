@@ -54,8 +54,10 @@
 
 
 (s/defschema DataSummary { :data-type (s/enum :tags :logentries)
-                          :status (s/enum :ok :inconsistent)
-                          :count s/Num })
+                           :status (s/enum :ok :inconsistent)
+                           :count s/Num
+                           :latest s/Str
+                           :oldest s/Str })
 
 
 (s/defschema Link { :href s/Str

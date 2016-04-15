@@ -1,6 +1,7 @@
 (ns jarvis-api.resources.datasummary
   (:require [jarvis-api.elasticsearch :as es]
-            [jarvis-api.config :as config]))
+            [jarvis-api.config :as config]
+            [jarvis-api.data_access :as jda]))
 
 
 (defn- get-data-type-file-seq
@@ -21,9 +22,15 @@
 (defn generate-data-summary
   [data-type]
   (let [file-count (count-data-type-files data-type)
-        doc-count (es/count-jarvis-documents (name data-type))]
+        doc-count (es/count-jarvis-documents (name data-type))
+        created-range (case data-type
+                        :tags (jda/get-created-range-tags)
+                        :logentries (jda/get-created-range-log-entries)
+                        nil)]
     { :data-type data-type
       :status (if (= file-count doc-count)
                 :ok
                 :inconsistent)
-      :count doc-count}))
+      :count doc-count
+      :latest (first created-range)
+      :oldest (last created-range)}))
