@@ -1,5 +1,8 @@
 (ns jarvis-api.links
-  (:require [org.bovinegenius.exploding-fish :as ef]
+  (:require [clojure.string :refer [lower-case]]
+            [org.bovinegenius.exploding-fish :as ef]
+            [schema.core :as s]
+            [jarvis-api.schemas :refer [LogEntry]]
             [jarvis-api.data_access :as jda]))
 
 
@@ -30,3 +33,22 @@
   (remove nil? (map #(%1 query-result from fully-qualified-uri)
                     [calc-next-from calc-prev-from])))
 
+
+(defn- replace-tags-with-links
+  [fully-qualified-uri jarvis-object]
+  (letfn [(construct-tag-uri [tag-name]
+            ; TODO: Probably can do better here
+            ; e.g. why is there a question mark at the end of the updated URL???
+            (str (assoc (assoc fully-qualified-uri :path
+                               (str "/tags/" (lower-case tag-name)))
+                        :param nil)))]
+    (let [tag-names (:tags jarvis-object)
+          tag-links (map (fn [tag-name] { :title tag-name
+                                          :rel "tag"
+                                          :href (construct-tag-uri tag-name)
+                                         }) tag-names)]
+      (dissoc (assoc jarvis-object :tagLinks tag-links) :tags))))
+
+(s/defn expand-log-entry
+  [fully-qualified-uri log-entry :- LogEntry]
+  (replace-tags-with-links fully-qualified-uri log-entry))

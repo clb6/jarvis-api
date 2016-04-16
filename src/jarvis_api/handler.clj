@@ -8,6 +8,7 @@
             [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev
                                         Tag TagRequest TagPrev DataSummary Link]]
+            [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]
             [jarvis-api.resources.datasummary :as dsummary]))
@@ -67,13 +68,13 @@
                                {from :- Long 0}]
                 :return { :items [LogEntry], :total Long, :links [Link] }
                 (ok (logs/query-log-entries tags searchterm from fully-qualified-uri)))
-    (GET "/:id" [id]
-      ; Don't know why BigInteger is not acceptable.
-      :path-params [id :- Long]
-      :return LogEntry
-      (if-let [log-entry (logs/get-log-entry! id)]
-        (ok log-entry)
-        (not-found)))
+           (GET "/:id" [:as {:keys [fully-qualified-uri id]}]
+                ; Don't know why BigInteger is not acceptable.
+                :path-params [id :- Long]
+                :return (dissoc (merge LogEntry {:tagLinks [Link]}) :tags)
+                (if-let [log-entry (logs/get-log-entry! id)]
+                  (ok (jl/expand-log-entry fully-qualified-uri log-entry))
+                  (not-found)))
     (POST "/" []
            :return LogEntry
            :body [log-entry-request LogEntryRequest]

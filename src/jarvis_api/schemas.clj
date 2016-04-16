@@ -2,16 +2,21 @@
   (:require [schema.core :as s]))
 
 
+(s/defschema Link { :href s/Str
+                    :rel s/Str
+                    (s/optional-key :title) s/Str })
+
+
 (s/defschema LogEntry { :id s/Num
-                       :author String
-                       :created String
-                       :occurred String
-                       :version String
-                       :tags [s/Str]
-                       :parent (s/maybe s/Str)
-                       :todo (s/maybe s/Str)
-                       :setting String
-                       :body String })
+                        :author String
+                        :created String
+                        :occurred String
+                        :version String
+                        :tags [s/Str]
+                        :parent (s/maybe s/Str)
+                        :todo (s/maybe s/Str)
+                        :setting String
+                        :body String })
 
 (s/defschema LogEntryRequest  { :author String
                                :occurred String
@@ -58,7 +63,3 @@
                            :count s/Num
                            :latest s/Str
                            :oldest s/Str })
-
-
-(s/defschema Link { :href s/Str
-                    :rel s/Str })
