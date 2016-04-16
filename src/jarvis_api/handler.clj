@@ -63,7 +63,6 @@
            :summary "API to handle log entries"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                :return [LogEntry]
                 :query-params [{tags :- s/Str ""} {searchterm :- s/Str ""}
                                {from :- Long 0}]
                 :return { :items [LogEntry], :total Long, :links [Link] }
@@ -71,7 +70,9 @@
            (GET "/:id" [:as {:keys [fully-qualified-uri id]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
-                :return (dissoc (merge LogEntry {:tagLinks [Link]}) :tags)
+                :return (dissoc (merge LogEntry { :tagLinks [Link]
+                                                  :parentLink (s/maybe Link) })
+                                :tags :parent)
                 (if-let [log-entry (logs/get-log-entry! id)]
                   (ok (jl/expand-log-entry fully-qualified-uri log-entry))
                   (not-found)))

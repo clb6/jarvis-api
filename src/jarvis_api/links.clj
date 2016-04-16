@@ -1,5 +1,5 @@
 (ns jarvis-api.links
-  (:require [clojure.string :refer [lower-case]]
+  (:require [clojure.string :refer [lower-case blank?]]
             [org.bovinegenius.exploding-fish :as ef]
             [schema.core :as s]
             [jarvis-api.schemas :refer [LogEntry]]
@@ -34,14 +34,17 @@
                     [calc-next-from calc-prev-from])))
 
 
+(defn- construct-new-jarvis-resource-uri
+  "TODO: Can do better path creation"
+  [resource-type resource-id src-uri]
+  (str (assoc src-uri :path (str "/" resource-type "/" resource-id)
+              :query nil)))
+
 (defn- replace-tags-with-links
   [fully-qualified-uri jarvis-object]
   (letfn [(construct-tag-uri [tag-name]
-            ; TODO: Probably can do better here
-            ; e.g. why is there a question mark at the end of the updated URL???
-            (str (assoc (assoc fully-qualified-uri :path
-                               (str "/tags/" (lower-case tag-name)))
-                        :param nil)))]
+            (construct-new-jarvis-resource-uri "tags" (lower-case tag-name)
+                                               fully-qualified-uri))]
     (let [tag-names (:tags jarvis-object)
           tag-links (map (fn [tag-name] { :title tag-name
                                           :rel "tag"
@@ -49,6 +52,20 @@
                                          }) tag-names)]
       (dissoc (assoc jarvis-object :tagLinks tag-links) :tags))))
 
+(defn- replace-parent-with-link
+  [fully-qualified-uri log-entry]
+  (let [parent (:parent log-entry)
+        ; Parent field can have emtpy strings unfortunately
+        parent-link (if (not (blank? parent))
+                      { :title parent
+                        :rel "parent"
+                        :href (construct-new-jarvis-resource-uri "logentries" parent
+                                                                  fully-qualified-uri)
+                        })]
+    (dissoc (assoc log-entry :parentLink parent-link) :parent)))
+
 (s/defn expand-log-entry
   [fully-qualified-uri log-entry :- LogEntry]
-  (replace-tags-with-links fully-qualified-uri log-entry))
+  (->> log-entry
+      (replace-parent-with-link fully-qualified-uri)
+      (replace-tags-with-links fully-qualified-uri)))
