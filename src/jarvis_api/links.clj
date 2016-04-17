@@ -13,25 +13,25 @@
   (str (ef/param fully-qualified-uri "from" from-to-update)))
 
 (defn- calc-prev-from
-  [query-result current-from fully-qualified-uri]
+  [current-from fully-qualified-uri]
   (let [prev-from (- current-from default-page-size)]
     (if (>= prev-from 0)
       { :href (construct-new-uri-string fully-qualified-uri prev-from)
         :rel "prev" })))
 
 (defn- calc-next-from
-  [query-result current-from fully-qualified-uri]
-  (let [total-hits (jda/get-total-hits-from-query query-result)
-        bump (min (- total-hits current-from) default-page-size)
+  [total-hits current-from fully-qualified-uri]
+  (let [bump (min (- total-hits current-from) default-page-size)
         next-from (+ bump current-from)]
     (if (< next-from total-hits)
       { :href (construct-new-uri-string fully-qualified-uri next-from)
         :rel "next" })))
 
 (defn generate-query-links
-  [query-result from fully-qualified-uri]
-  (remove nil? (map #(%1 query-result from fully-qualified-uri)
-                    [calc-next-from calc-prev-from])))
+  [total-hits from fully-qualified-uri]
+  (remove nil? (map #(%1 from fully-qualified-uri)
+                    [ (partial calc-next-from total-hits)
+                      calc-prev-from])))
 
 
 (defn- construct-new-jarvis-resource-uri

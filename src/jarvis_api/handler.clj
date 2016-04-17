@@ -66,7 +66,12 @@
                 :query-params [{tags :- s/Str ""} {searchterm :- s/Str ""}
                                {from :- Long 0}]
                 :return { :items [LogEntry], :total Long, :links [Link] }
-                (ok (logs/query-log-entries tags searchterm from fully-qualified-uri)))
+                (let [query-result (logs/query-log-entries tags searchterm from)
+                      response (assoc query-result :links
+                                      (jl/generate-query-links (:total query-result)
+                                                               from
+                                                               fully-qualified-uri))]
+                  (ok response)))
            (GET "/:id" [:as {:keys [fully-qualified-uri id]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
