@@ -7,7 +7,6 @@
             [clj-logging-config.log4j :refer [set-loggers!]]
             [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryResponse
-                                        LogEntryPrev
                                         Tag TagRequest TagPrev DataSummary Link]]
             [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
@@ -112,15 +111,7 @@
                                 (create-web-response (logs/put-log-entry! id
                                                                           log-entry-updated))
                                 (bad-request)))
-                            log-entry-updated))
-    (PUT "/:id/migrate" [id]
-      :path-params [id :- Long]
-      :return LogEntry
-      :body [log-entry-to-migrate LogEntryPrev]
-      ; TODO: Validate the previous log entry object
-      (if (logs/log-entry-exists? id)
-        (conflict)
-        (create-web-response (logs/migrate-log-entry! id log-entry-to-migrate)))))
+                            log-entry-updated)))
   (context "/tags" []
            :tags ["tags"]
            :summary "API to handle tags"

@@ -30,17 +30,6 @@
                                                         :parentLink (s/maybe Link) })
                                       :tags :parent))
 
-(s/defschema LogEntryPrev { (s/optional-key :id) s/Num
-                           :author String
-                           :created String
-                           (s/optional-key :occurred) String
-                           :version String
-                           :tags [s/Str]
-                           (s/optional-key :parent) (s/maybe s/Str)
-                           (s/optional-key :todo) (s/maybe s/Str)
-                           (s/optional-key :setting) String
-                           :body String })
-
 
 (s/defschema Tag { :name s/Str
                   :author s/Str
