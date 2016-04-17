@@ -30,6 +30,13 @@
     (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
     (handler jarvis-request)))
 
+(defn- wrap-check-tags-exist
+  [handler jarvis-request]
+  (fn check-tags-exist [request]
+    (if-let [tag-names-missing (find-missing-tags jarvis-request)]
+      (bad-request { :error "Unknown tags.", :missing-tags tag-names-missing })
+      (handler jarvis-request))))
+
 (defn- create-web-response
   [jarvis-object]
   (if jarvis-object
@@ -84,13 +91,18 @@
                 (if-let [log-entry (logs/get-log-entry! id)]
                   (ok (jl/expand-log-entry fully-qualified-uri log-entry))
                   (not-found)))
-    (POST "/" []
-           :return LogEntry
-           :body [log-entry-request LogEntryRequest]
-           (wrap-verify-tags (fn [log-entry-request]
-                               (create-web-response (logs/post-log-entry!
-                                                      log-entry-request)))
-                             log-entry-request))
+           (POST "/" [:as {:keys [fully-qualified-uri]}]
+                 :return LogEntryResponse
+                 :body [log-entry-request LogEntryRequest]
+                 (-> (fn [log-entry-request]
+                       (if-let [log-entry-object (logs/post-log-entry! log-entry-request)]
+                         (let [log-entry (jl/expand-log-entry fully-qualified-uri
+                                                              log-entry-object)]
+                           (header (created log-entry) "Location"
+                                   (jl/construct-new-log-entry-uri (:id log-entry-object)
+                                                                   fully-qualified-uri)))
+                         (internal-server-error)))
+                     (wrap-check-tags-exist log-entry-request)))
     (PUT "/:id" [id]
           :path-params [id :- Long]
           :return LogEntry

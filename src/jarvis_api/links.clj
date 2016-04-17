@@ -40,6 +40,8 @@
   (str (assoc src-uri :path (str "/" resource-type "/" resource-id)
               :query nil)))
 
+(def construct-new-log-entry-uri (partial construct-new-jarvis-resource-uri "logentries"))
+
 (defn- replace-tags-with-links
   [fully-qualified-uri jarvis-object]
   (letfn [(construct-tag-uri [tag-name]
