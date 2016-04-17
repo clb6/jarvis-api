@@ -6,7 +6,8 @@
             [ring.middleware.logger :as log]
             [clj-logging-config.log4j :refer [set-loggers!]]
             [org.bovinegenius.exploding-fish :as ef]
-            [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryPrev
+            [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryResponse
+                                        LogEntryPrev
                                         Tag TagRequest TagPrev DataSummary Link]]
             [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
@@ -65,9 +66,13 @@
            (GET "/" [:as {:keys [fully-qualified-uri]}]
                 :query-params [{tags :- s/Str ""} {searchterm :- s/Str ""}
                                {from :- Long 0}]
-                :return { :items [LogEntry], :total Long, :links [Link] }
+                :return { :items [LogEntryResponse], :total Long, :links [Link] }
                 (let [query-result (logs/query-log-entries tags searchterm from)
-                      response (assoc query-result :links
+                      response (assoc query-result :items
+                                      (map (partial jl/expand-log-entry
+                                                    fully-qualified-uri)
+                                           (:items query-result)))
+                      response (assoc response :links
                                       (jl/generate-query-links (:total query-result)
                                                                from
                                                                fully-qualified-uri))]
@@ -75,9 +80,7 @@
            (GET "/:id" [:as {:keys [fully-qualified-uri id]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
-                :return (dissoc (merge LogEntry { :tagLinks [Link]
-                                                  :parentLink (s/maybe Link) })
-                                :tags :parent)
+                :return LogEntryResponse
                 (if-let [log-entry (logs/get-log-entry! id)]
                   (ok (jl/expand-log-entry fully-qualified-uri log-entry))
                   (not-found)))

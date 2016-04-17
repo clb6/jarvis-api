@@ -26,6 +26,10 @@
                                :setting String
                                :body String })
 
+(s/defschema LogEntryResponse (dissoc (merge LogEntry { :tagLinks [Link]
+                                                        :parentLink (s/maybe Link) })
+                                      :tags :parent))
+
 (s/defschema LogEntryPrev { (s/optional-key :id) s/Num
                            :author String
                            :created String
