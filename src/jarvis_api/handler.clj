@@ -102,16 +102,19 @@
                                                                    fully-qualified-uri)))
                          (internal-server-error)))
                      (wrap-check-tags-exist log-entry-request)))
-    (PUT "/:id" [id]
-          :path-params [id :- Long]
-          :return LogEntry
-          :body [log-entry-updated LogEntry]
-          (wrap-verify-tags (fn [log-entry-updated]
-                              (if (logs/valid-log-entry? id log-entry-updated)
-                                (create-web-response (logs/put-log-entry! id
-                                                                          log-entry-updated))
-                                (bad-request)))
-                            log-entry-updated)))
+           (PUT "/:id" [:as {:keys [fully-qualified-uri id]}]
+                :path-params [id :- Long]
+                :return LogEntryResponse
+                :body [log-entry-request LogEntryRequest]
+                (-> (fn [log-entry-request]
+                      (if-let [log-entry-object (logs/get-log-entry! id)]
+                        (let [log-entry-object (logs/update-log-entry! log-entry-object
+                                                                       log-entry-request)
+                              log-entry (jl/expand-log-entry fully-qualified-uri
+                                                             log-entry-object)]
+                          (header (ok log-entry) "Location" fully-qualified-uri))
+                        (not-found)))
+                    (wrap-check-tags-exist log-entry-request))))
   (context "/tags" []
            :tags ["tags"]
            :summary "API to handle tags"

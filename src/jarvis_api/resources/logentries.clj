@@ -70,12 +70,7 @@
     (write-log-entry-object! (generate-log-id created) log-entry-object)))
 
 
-(s/defn valid-log-entry?
-  "TODO: Actually check the LogEntry object."
-  [id :- BigInteger log-entry-to-check :- LogEntry]
-  (= id (:id log-entry-to-check)))
-
-
-(s/defn put-log-entry!
-  [id :- BigInteger log-entry-updated :- LogEntry]
-  (write-log-entry-object! id log-entry-updated))
+(s/defn update-log-entry!
+  [log-entry-object :- LogEntry log-entry-request :- LogEntryRequest]
+  (let [updated-log-entry-object (merge log-entry-object log-entry-request)]
+    (write-log-entry-object! (:id updated-log-entry-object) updated-log-entry-object)))
