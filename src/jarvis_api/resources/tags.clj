@@ -3,7 +3,7 @@
             [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [Tag TagRequest TagPrev]]
+            [jarvis-api.schemas :refer [Tag TagRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
             [jarvis-api.data_access :as jda]
@@ -87,11 +87,3 @@
   tag file format."
   [tag-request :- TagRequest]
   (put-tag! (:name tag-request) (create-tag-object tag-request)))
-
-
-(s/defn migrate-tag! :- Tag
-  "Migrate the previous tag object from a former schema to the new schema"
-  [tag-name :- s/Str tag-to-migrate :- TagPrev]
-  (write-tag-object! tag-name (assoc (util/set-field-default-maybe tag-to-migrate
-                                                                   :name tag-name)
-                                       :version config/jarvis-tag-version)))

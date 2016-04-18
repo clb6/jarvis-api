@@ -7,7 +7,7 @@
             [clj-logging-config.log4j :refer [set-loggers!]]
             [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [LogEntryRequest LogEntry
-                                        Tag TagRequest TagPrev DataSummary Link]]
+                                        Tag TagRequest DataSummary Link]]
             [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]
@@ -147,14 +147,7 @@
                                                                       tag-updated))
                                   (bad-request))
                                 (not-found)))
-                            tag-updated))
-    (PUT "/:tag-name/migrate" [tag-name]
-          :return Tag
-          :body [tag-to-migrate TagPrev]
-          ; TODO: Validate the previous tag object
-          (if (tags/tag-exists? tag-name)
-            (conflict)
-            (create-web-response (tags/migrate-tag! tag-name tag-to-migrate)))))
+                            tag-updated)))
   )
 
 

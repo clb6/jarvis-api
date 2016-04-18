@@ -43,13 +43,6 @@
                          :tags [s/Str]
                          :body s/Str })
 
-(s/defschema TagPrev { (s/optional-key :name) s/Str
-                      :author s/Str
-                      :created s/Str
-                      :version s/Str
-                      :tags [s/Str]
-                      :body s/Str })
-
 
 (s/defschema DataSummary { :data-type (s/enum :tags :logentries)
                            :status (s/enum :ok :inconsistent)
