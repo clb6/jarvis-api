@@ -3,7 +3,7 @@
             [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [LogEntry LogEntryRequest]]
+            [jarvis-api.schemas :refer [LogEntryObject LogEntryRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
             [jarvis-api.data_access :as jda]
@@ -11,7 +11,7 @@
 
 
 (defn query-log-entries
-  "Returns { :items [LogEntry] :total Long } if there are no hits then :items is
+  "Returns { :items [LogEntryObject] :total Long } if there are no hits then :items is
   an empty list"
   [tags searchterm from]
   (let [query-criterias (jda/add-query-criteria-tags tags)
@@ -20,7 +20,7 @@
     { :items (jda/get-hits-from-query query-result)
       :total (jda/get-total-hits-from-query query-result) }))
 
-(s/defn get-log-entry! :- LogEntry
+(s/defn get-log-entry! :- LogEntryObject
   [id :- BigInteger]
   (if-let [log-entry (jda/get-jarvis-document! "logentries" id)]
     (update-in log-entry [:id] biginteger)))
@@ -62,7 +62,7 @@
             [:parent :todo])))
 
 
-(s/defn post-log-entry! :- LogEntry
+(s/defn post-log-entry! :- LogEntryObject
   "Post a new log entry where new entries are appended."
   [log-entry-request :- LogEntryRequest]
   (let [created (tc/now)
@@ -70,7 +70,7 @@
     (write-log-entry-object! (generate-log-id created) log-entry-object)))
 
 
-(s/defn update-log-entry!
-  [log-entry-object :- LogEntry log-entry-request :- LogEntryRequest]
+(s/defn update-log-entry! :- LogEntryObject
+  [log-entry-object :- LogEntryObject log-entry-request :- LogEntryRequest]
   (let [updated-log-entry-object (merge log-entry-object log-entry-request)]
     (write-log-entry-object! (:id updated-log-entry-object) updated-log-entry-object)))

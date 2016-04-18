@@ -7,28 +7,28 @@
                     (s/optional-key :title) s/Str })
 
 
-(s/defschema LogEntry { :id s/Num
-                        :author String
-                        :created String
-                        :occurred String
-                        :version String
-                        :tags [s/Str]
-                        :parent (s/maybe s/Str)
-                        :todo (s/maybe s/Str)
-                        :setting String
-                        :body String })
+(s/defschema LogEntryObject { :id s/Num
+                              :author String
+                              :created String
+                              :occurred String
+                              :version String
+                              :tags [s/Str]
+                              :parent (s/maybe s/Str)
+                              :todo (s/maybe s/Str)
+                              :setting String
+                              :body String })
 
 (s/defschema LogEntryRequest  { :author String
-                               :occurred String
-                               :tags [s/Str]
-                               (s/optional-key :parent) (s/maybe s/Str)
-                               (s/optional-key :todo) (s/maybe s/Str)
-                               :setting String
-                               :body String })
+                                :occurred String
+                                :tags [s/Str]
+                                (s/optional-key :parent) (s/maybe s/Str)
+                                (s/optional-key :todo) (s/maybe s/Str)
+                                :setting String
+                                :body String })
 
-(s/defschema LogEntryResponse (dissoc (merge LogEntry { :tagLinks [Link]
-                                                        :parentLink (s/maybe Link) })
-                                      :tags :parent))
+(s/defschema LogEntry (dissoc (merge LogEntryObject { :tagLinks [Link]
+                                                      :parentLink (s/maybe Link) })
+                              :tags :parent))
 
 
 (s/defschema Tag { :name s/Str

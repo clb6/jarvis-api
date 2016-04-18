@@ -6,7 +6,7 @@
             [ring.middleware.logger :as log]
             [clj-logging-config.log4j :refer [set-loggers!]]
             [org.bovinegenius.exploding-fish :as ef]
-            [jarvis-api.schemas :refer [LogEntry LogEntryRequest LogEntryResponse
+            [jarvis-api.schemas :refer [LogEntryRequest LogEntry
                                         Tag TagRequest TagPrev DataSummary Link]]
             [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
@@ -72,7 +72,7 @@
            (GET "/" [:as {:keys [fully-qualified-uri]}]
                 :query-params [{tags :- s/Str ""} {searchterm :- s/Str ""}
                                {from :- Long 0}]
-                :return { :items [LogEntryResponse], :total Long, :links [Link] }
+                :return { :items [LogEntry], :total Long, :links [Link] }
                 (let [query-result (logs/query-log-entries tags searchterm from)
                       response (assoc query-result :items
                                       (map (partial jl/expand-log-entry
@@ -86,12 +86,12 @@
            (GET "/:id" [:as {:keys [fully-qualified-uri id]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
-                :return LogEntryResponse
+                :return LogEntry
                 (if-let [log-entry (logs/get-log-entry! id)]
                   (ok (jl/expand-log-entry fully-qualified-uri log-entry))
                   (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
-                 :return LogEntryResponse
+                 :return LogEntry
                  :body [log-entry-request LogEntryRequest]
                  (-> (fn [log-entry-request]
                        (if-let [log-entry-object (logs/post-log-entry! log-entry-request)]
@@ -104,7 +104,7 @@
                      (wrap-check-tags-exist log-entry-request)))
            (PUT "/:id" [:as {:keys [fully-qualified-uri id]}]
                 :path-params [id :- Long]
-                :return LogEntryResponse
+                :return LogEntry
                 :body [log-entry-request LogEntryRequest]
                 (-> (fn [log-entry-request]
                       (if-let [log-entry-object (logs/get-log-entry! id)]
