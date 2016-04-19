@@ -3,7 +3,7 @@
             [clj-time.core :as tc]
             [clj-time.format :as tf]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [Tag TagRequest]]
+            [jarvis-api.schemas :refer [TagObject TagRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
             [jarvis-api.data_access :as jda]
@@ -12,13 +12,12 @@
 
 
 (defn query-tags
-  [tag-name tags from fully-qualified-uri]
+  [tag-name tags from]
   (let [query-criterias (jda/add-query-criteria-tag-name tag-name)
         query-criterias (jda/add-query-criteria-tags tags query-criterias)
         query-result (jda/query-tags query-criterias from)]
     { :items (jda/get-hits-from-query query-result)
-      :total (jda/get-total-hits-from-query query-result)
-      :links (jl/generate-query-links query-result from fully-qualified-uri) }))
+      :total (jda/get-total-hits-from-query query-result) }))
 
 
 (defn- fetch-tag-files!
@@ -38,7 +37,7 @@
     (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
 
 
-(s/defn get-tag! :- Tag
+(s/defn get-tag! :- TagObject
   "Returns web response where it will return a tag object if a tag is found"
   [tag-name :- String]
   (jda/get-jarvis-document! "tags" (cs/lower-case tag-name)))
@@ -73,16 +72,16 @@
 (s/defn valid-tag?
   "TODO: Actually check the Tag object. Might want to consider using arity to be
   able to check just the Tag."
-  [tag-name :- s/Str tag-to-check :- Tag]
+  [tag-name :- s/Str tag-to-check :- TagObject]
   (= tag-name (:name tag-to-check)))
 
 
-(s/defn put-tag! :- Tag
-  [tag-name :- s/Str tag-updated :- Tag]
+(s/defn put-tag! :- TagObject
+  [tag-name :- s/Str tag-updated :- TagObject]
   (write-tag-object! tag-name tag-updated))
 
 
-(s/defn post-tag! :- Tag
+(s/defn post-tag! :- TagObject
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
   tag file format."
   [tag-request :- TagRequest]

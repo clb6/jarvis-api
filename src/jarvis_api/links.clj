@@ -2,7 +2,7 @@
   (:require [clojure.string :refer [lower-case blank?]]
             [org.bovinegenius.exploding-fish :as ef]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [LogEntry]]
+            [jarvis-api.schemas :refer [LogEntry Tag]]
             [jarvis-api.data_access :as jda]))
 
 
@@ -41,6 +41,7 @@
               :query nil)))
 
 (def construct-new-log-entry-uri (partial construct-new-jarvis-resource-uri "logentries"))
+(def construct-new-tag-uri (partial construct-new-jarvis-resource-uri "tags"))
 
 (defn- replace-tags-with-links
   [fully-qualified-uri jarvis-object]
@@ -70,4 +71,9 @@
   [fully-qualified-uri log-entry :- LogEntry]
   (->> log-entry
       (replace-parent-with-link fully-qualified-uri)
+      (replace-tags-with-links fully-qualified-uri)))
+
+(s/defn expand-tag
+  [fully-qualified-uri tag :- Tag]
+  (->> tag
       (replace-tags-with-links fully-qualified-uri)))

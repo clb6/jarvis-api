@@ -83,7 +83,7 @@
                                                                from
                                                                fully-qualified-uri))]
                   (ok response)))
-           (GET "/:id" [:as {:keys [fully-qualified-uri id]}]
+           (GET "/:id" [:as {:keys [fully-qualified-uri]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
                 :return LogEntry
@@ -102,7 +102,7 @@
                                                                    fully-qualified-uri)))
                          (internal-server-error)))
                      (wrap-check-tags-exist log-entry-request)))
-           (PUT "/:id" [:as {:keys [fully-qualified-uri id]}]
+           (PUT "/:id" [:as {:keys [fully-qualified-uri]}]
                 :path-params [id :- Long]
                 :return LogEntry
                 :body [log-entry-request LogEntryRequest]
@@ -120,15 +120,25 @@
            :summary "API to handle tags"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                 :query-params [{name :- s/Str ""} {tags :- s/Str ""}
+                :query-params [{name :- s/Str ""} {tags :- s/Str ""}
                                 {from :- Long 0}]
-                 :return { :items [Tag], :total Long, :links [Link] }
-                 (ok (tags/query-tags name tags from fully-qualified-uri)))
-    (GET "/:tag-name" [tag-name]
-          :return Tag
-          (if (tags/tag-exists? tag-name)
-            (create-web-response (tags/get-tag! tag-name))
-            (not-found)))
+                :return { :items [Tag], :total Long, :links [Link] }
+                (let [query-result (tags/query-tags name tags from)
+                      response (assoc query-result :items
+                                      (map (partial jl/expand-tag
+                                                    fully-qualified-uri)
+                                           (:items query-result)))
+                      response (assoc response :links
+                                      (jl/generate-query-links (:total query-result)
+                                                               from
+                                                               fully-qualified-uri))]
+                  (ok response)))
+           (GET "/:tag-name" [:as {:keys [fully-qualified-uri]}]
+                :path-params [tag-name :- s/Str]
+                :return Tag
+                (if (tags/tag-exists? tag-name)
+                  (ok (jl/expand-tag fully-qualified-uri (tags/get-tag! tag-name)))
+                  (not-found)))
     (POST "/" []
            :return Tag
            :body [tag-request TagRequest]

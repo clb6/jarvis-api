@@ -31,17 +31,19 @@
                               :tags :parent))
 
 
-(s/defschema Tag { :name s/Str
-                  :author s/Str
-                  :created s/Str
-                  :version s/Str
-                  :tags [s/Str]
-                  :body s/Str })
-
-(s/defschema TagRequest { :name s/Str
+(s/defschema TagObject { :name s/Str
                          :author s/Str
+                         :created s/Str
+                         :version s/Str
                          :tags [s/Str]
                          :body s/Str })
+
+(s/defschema TagRequest { :name s/Str
+                          :author s/Str
+                          :tags [s/Str]
+                          :body s/Str })
+
+(s/defschema Tag (dissoc (merge TagObject { :tagLinks [Link] }) :tags))
 
 
 (s/defschema DataSummary { :data-type (s/enum :tags :logentries)
