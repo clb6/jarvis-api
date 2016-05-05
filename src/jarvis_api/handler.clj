@@ -139,14 +139,20 @@
                 (if (tags/tag-exists? tag-name)
                   (ok (jl/expand-tag fully-qualified-uri (tags/get-tag! tag-name)))
                   (not-found)))
-    (POST "/" []
-           :return Tag
-           :body [tag-request TagRequest]
-           (wrap-verify-tags (fn [tag-request]
-                               (if (tags/tag-exists? (:name tag-request))
-                                 (conflict)
-                                 (create-web-response (tags/post-tag! tag-request))))
-                             tag-request))
+           (POST "/" [:as {:keys [fully-qualified-uri]}]
+                 :return Tag
+                 :body [tag-request TagRequest]
+                 (-> (fn [tag-request]
+                       (if (tags/tag-exists? (:name tag-request))
+                         (conflict)
+                         (if-let [tag-object (tags/post-tag! tag-request)]
+                           (let [tag (jl/expand-tag fully-qualified-uri
+                                                          tag-object)]
+                             (header (created tag) "Location"
+                                     (jl/construct-new-tag-uri (:name tag-object)
+                                                               fully-qualified-uri)))
+                           (internal-server-error))))
+                     (wrap-check-tags-exist tag-request)))
     (PUT "/:tag-name" [tag-name]
           :return Tag
           :body [tag-updated Tag]
