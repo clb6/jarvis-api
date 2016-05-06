@@ -70,19 +70,18 @@
 
 
 (s/defn valid-tag?
-  "TODO: Actually check the Tag object. Might want to consider using arity to be
-  able to check just the Tag."
-  [tag-name :- s/Str tag-to-check :- TagObject]
-  (= tag-name (:name tag-to-check)))
-
-
-(s/defn put-tag! :- TagObject
-  [tag-name :- s/Str tag-updated :- TagObject]
-  (write-tag-object! tag-name tag-updated))
+  [tag-name :- s/Str tag-request :- TagRequest]
+  (= (cs/lower-case tag-name) (cs/lower-case (:name tag-request))))
 
 
 (s/defn post-tag! :- TagObject
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
   tag file format."
   [tag-request :- TagRequest]
-  (put-tag! (:name tag-request) (create-tag-object tag-request)))
+  (write-tag-object! (:name tag-request) (create-tag-object tag-request)))
+
+
+(s/defn update-tag! :- TagObject
+  [tag-object :- TagObject tag-request :- TagRequest]
+  (let [updated-tag-object (merge tag-object tag-request)]
+    (write-tag-object! (:name updated-tag-object) updated-tag-object)))

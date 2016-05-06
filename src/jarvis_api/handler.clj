@@ -23,24 +23,12 @@
     (if (not (empty? tag-names-missing))
       tag-names-missing)))
 
-(defn- wrap-verify-tags
-  [handler jarvis-request]
-  (if-let [tag-names-missing (find-missing-tags jarvis-request)]
-    (bad-request { :error "There are unknown tags.", :missing-tags tag-names-missing })
-    (handler jarvis-request)))
-
 (defn- wrap-check-tags-exist
   [handler jarvis-request]
   (fn check-tags-exist [request]
     (if-let [tag-names-missing (find-missing-tags jarvis-request)]
       (bad-request { :error "Unknown tags.", :missing-tags tag-names-missing })
       (handler jarvis-request))))
-
-(defn- create-web-response
-  [jarvis-object]
-  (if jarvis-object
-    (ok jarvis-object)
-    (internal-server-error)))
 
 (defn- wrap-request-add-self-link
   [handler]
@@ -153,17 +141,21 @@
                                                                fully-qualified-uri)))
                            (internal-server-error))))
                      (wrap-check-tags-exist tag-request)))
-    (PUT "/:tag-name" [tag-name]
-          :return Tag
-          :body [tag-updated Tag]
-          (wrap-verify-tags (fn [tag-updated]
-                              (if (tags/tag-exists? tag-name)
-                                (if (tags/valid-tag? tag-name tag-updated)
-                                  (create-web-response (tags/put-tag! tag-name
-                                                                      tag-updated))
-                                  (bad-request))
-                                (not-found)))
-                            tag-updated)))
+           (PUT "/:tag-name" [:as {:keys [fully-qualified-uri]}]
+                :path-params [tag-name :- s/Str]
+                :return Tag
+                :body [tag-request TagRequest]
+                (-> (fn [tag-request]
+                      (if (tags/valid-tag? tag-name tag-request)
+                        (if-let [tag-object-prev (tags/get-tag! tag-name)]
+                          (let [tag-object (tags/update-tag! tag-object-prev
+                                                             tag-request)
+                                tag (jl/expand-tag fully-qualified-uri
+                                                   tag-object)]
+                            (header (ok tag) "Location" fully-qualified-uri))
+                          (not-found))
+                        (bad-request)))
+                    (wrap-check-tags-exist tag-request))))
   )
 
 
