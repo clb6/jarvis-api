@@ -51,7 +51,7 @@
   (filter #(not (tag-exists? %1)) tag-names))
 
 
-(def metadata-keys-tags (list :name :author :created :version :tags))
+(def metadata-keys-tags (list :name :author :created :modified :version :tags))
 (def create-tag-file (partial mf/create-file metadata-keys-tags))
 
 (defn- write-tag-object!
@@ -63,8 +63,13 @@
 (defn- create-tag-object
   "Create Tag from TagRequest"
   [tag-request]
-  (let [now-isoformat (util/create-timestamp-isoformat)]
-    (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)))
+  (let [modified-isoformat (util/create-timestamp-isoformat)
+        ; Allow created timestamp to be passed-in. The use case is migrations.
+        created-isoformat (if (contains? tag-request :created)
+                            (:created tag-request)
+                            modified-isoformat)]
+    (assoc tag-request :created created-isoformat :modified modified-isoformat
+           :version config/jarvis-tag-version)))
 
 
 (s/defn valid-tag?
@@ -81,5 +86,6 @@
 
 (s/defn update-tag! :- TagObject
   [tag-object :- TagObject tag-request :- TagRequest]
-  (let [updated-tag-object (merge tag-object tag-request)]
+  (let [updated-tag-object (merge tag-object tag-request)
+        updated-tag-object (assoc updated-tag-object :modified (util/create-timestamp-isoformat))]
     (write-tag-object! (:name updated-tag-object) updated-tag-object)))

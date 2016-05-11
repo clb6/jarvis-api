@@ -34,12 +34,15 @@
 (s/defschema TagObject { :name s/Str
                          :author s/Str
                          :created s/Str
+                         :modified s/Str
                          :version s/Str
                          :tags [s/Str]
                          :body s/Str })
 
 (s/defschema TagRequest { :name s/Str
                           :author s/Str
+                          ; Optionally put created here for migration purpose
+                          (s/optional-key :created) s/Str
                           :tags [s/Str]
                           :body s/Str })
 
