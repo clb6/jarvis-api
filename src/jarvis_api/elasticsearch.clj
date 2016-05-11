@@ -14,8 +14,10 @@
   [document-type document-id document]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)
         document-id (str document-id)
-        version-prev (:_version (esd/get conn "jarvis" document-type document-id))
-        response (esd/put conn "jarvis" document-type document-id document)]
+        version-prev (:_version (esd/get conn config/jarvis-elasticsearch-index
+                                         document-type document-id))
+        response (esd/put conn config/jarvis-elasticsearch-index document-type
+                          document-id document)]
     ; Handle both when there hasn't been an existing version and when a new
     ; version has been pushed.
     (if (or (:created response) (> (:_version response) version-prev))
@@ -24,19 +26,21 @@
 (defn get-jarvis-document
   [document-type document-id]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)
-        response (esd/get conn "jarvis" document-type (str document-id))]
+        response (esd/get conn config/jarvis-elasticsearch-index document-type
+                          (str document-id))]
     (if (:found response)
       (:_source response))))
 
 (defn delete-jarvis-document
   [document-type document-id]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
-    (esd/delete conn "jarvis" document-type (str document-id))))
+    (esd/delete conn config/jarvis-elasticsearch-index document-type
+                (str document-id))))
 
 (defn count-jarvis-documents
   [document-type]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
-    (:count (esd/count conn "jarvis" document-type))))
+    (:count (esd/count conn config/jarvis-elasticsearch-index document-type))))
 
 
 (defn add-query-criteria
@@ -67,8 +71,8 @@
   [document-type sort-request query-criterias from]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)
         query-request (esq/bool { :must query-criterias })
-        result (esd/search conn "jarvis" document-type :query query-request
-                           :sort sort-request :from from)]
+        result (esd/search conn config/jarvis-elasticsearch-index document-type
+                           :query query-request :sort sort-request :from from)]
     [(map :_source (:hits (:hits result))) (get-in result [:hits :total])]))
 
 
@@ -76,7 +80,8 @@
   [document-type aggregation-query]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)
         ; :search_type "count" is used so that "hits" are not returned
-        result (esd/search conn "jarvis" document-type :aggregations aggregation-query
-                           :query (esq/match-all) :search_type "count")]
+        result (esd/search conn config/jarvis-elasticsearch-index document-type
+                           :aggregations aggregation-query :query (esq/match-all)
+                           :search_type "count")]
     (aggregations-from result)))
 
