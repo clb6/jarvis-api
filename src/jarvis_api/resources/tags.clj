@@ -1,7 +1,5 @@
 (ns jarvis-api.resources.tags
   (:require [clojure.string :as cs]
-            [clj-time.core :as tc]
-            [clj-time.format :as tf]
             [schema.core :as s]
             [jarvis-api.schemas :refer [TagObject TagRequest]]
             [jarvis-api.config :as config]
@@ -65,7 +63,7 @@
 (defn- create-tag-object
   "Create Tag from TagRequest"
   [tag-request]
-  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) (tc/now))]
+  (let [now-isoformat (util/create-timestamp-isoformat)]
     (assoc tag-request :created now-isoformat :version config/jarvis-tag-version)))
 
 

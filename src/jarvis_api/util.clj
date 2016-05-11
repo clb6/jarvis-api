@@ -1,4 +1,6 @@
-(ns jarvis-api.util)
+(ns jarvis-api.util
+  (:require [clj-time.core :as tc]
+            [clj-time.format :as tf]))
 
 
 (defn set-field-default-maybe
@@ -7,3 +9,9 @@
   (if (not (contains? jarvis-resource metadata-key))
     (assoc jarvis-resource metadata-key default)
     jarvis-resource))
+
+
+(defn create-timestamp-isoformat
+  "Create a string representation in ISO-8601 of now"
+  ([] (create-timestamp-isoformat (tc/now)))
+  ([timestamp] (tf/unparse (tf/formatters :date-hour-minute-second) timestamp)))

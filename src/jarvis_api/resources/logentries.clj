@@ -1,7 +1,6 @@
 (ns jarvis-api.resources.logentries
   (:require [clojure.string :as cs]
             [clj-time.core :as tc]
-            [clj-time.format :as tf]
             [schema.core :as s]
             [jarvis-api.schemas :refer [LogEntryObject LogEntryRequest]]
             [jarvis-api.config :as config]
@@ -50,7 +49,7 @@
   "Creates a full LogEntry meaning that fields that are considered optional in
   the request are added into the object."
   [created log-entry-request]
-  (let [now-isoformat (tf/unparse (tf/formatters :date-hour-minute-second) created)
+  (let [now-isoformat (util/create-timestamp-isoformat created)
         log-entry-object (assoc log-entry-request
                                 :id (generate-log-id created)
                                 :created now-isoformat
