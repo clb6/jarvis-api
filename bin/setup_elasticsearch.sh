@@ -8,9 +8,10 @@ echo "Elasticsearch URL: $URL_ELASTICSEARCH"
 
 DIR_MAPPINGS="setup/mappings"
 
-curl -X PUT $URL_ELASTICSEARCH/jarvis_v3
-curl -X PUT $URL_ELASTICSEARCH/jarvis_v3/_mapping/tags -d \
+curl -X PUT $URL_ELASTICSEARCH/jarvis-danish
+curl -X PUT $URL_ELASTICSEARCH/jarvis-danish/_mapping/tags -d \
     @$DIR_MAPPINGS/mapping_tags.json
-curl -X PUT $URL_ELASTICSEARCH/jarvis_v3/_mapping/logentries -d \
+curl -X PUT $URL_ELASTICSEARCH/jarvis-danish/_mapping/logentries -d \
     @$DIR_MAPPINGS/mapping_log_entries.json
-curl -X PUT $URL_ELASTICSEARCH/jarvis_v3/_alias/jarvis
+# Moving away from alias but keep here for now
+#curl -X PUT $URL_ELASTICSEARCH/jarvis-danish/_alias/jarvis
