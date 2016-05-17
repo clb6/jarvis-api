@@ -31,8 +31,8 @@
 
 ; Tried to use the `keys` method from the schema but the sort order is not
 ; predictable. Maybe use two separate vectors to construct the schema via zip.
-(def metadata-keys-log-entries (list :id :author :created :occurred :version :tags
-                                     :parent :todo :setting))
+(def metadata-keys-log-entries (list :id :author :created :modified :occurred
+                                     :version :tags :parent :event :todo :setting))
 (def create-log-entry-file (partial mf/create-file metadata-keys-log-entries))
 
 (defn- generate-log-id
@@ -49,16 +49,18 @@
   "Creates a full LogEntry meaning that fields that are considered optional in
   the request are added into the object."
   [created log-entry-request]
-  (let [now-isoformat (util/create-timestamp-isoformat created)
+  (let [modified-isoformat (util/create-timestamp-isoformat)
+        created-isoformat (util/create-timestamp-isoformat created)
         log-entry-object (assoc log-entry-request
                                 :id (generate-log-id created)
-                                :created now-isoformat
+                                :created created-isoformat
+                                :modified modified-isoformat
                                 :version config/jarvis-log-entry-version)]
     (reduce (fn [target-map k] (if (not (contains? target-map k))
                                  (assoc target-map k nil)
                                  target-map))
             log-entry-object
-            [:parent :todo])))
+            [:parent :event :todo])))
 
 
 (s/defn post-log-entry! :- LogEntryObject
@@ -71,5 +73,7 @@
 
 (s/defn update-log-entry! :- LogEntryObject
   [log-entry-object :- LogEntryObject log-entry-request :- LogEntryRequest]
-  (let [updated-log-entry-object (merge log-entry-object log-entry-request)]
+  (let [updated-log-entry-object (merge log-entry-object log-entry-request)
+        updated-log-entry-object (assoc updated-log-entry-object
+                                        :modified (util/create-timestamp-isoformat))]
     (write-log-entry-object! (:id updated-log-entry-object) updated-log-entry-object)))
