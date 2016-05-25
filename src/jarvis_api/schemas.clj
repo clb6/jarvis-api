@@ -20,7 +20,8 @@
                               :setting String
                               :body String })
 
-(s/defschema LogEntryRequest  { :author String
+(s/defschema LogEntryRequest  { (s/optional-key :id) s/Num
+                                :author String
                                 ; Optionally put created here for migration purpose
                                 (s/optional-key :created) s/Str
                                 :occurred String

@@ -48,11 +48,10 @@
 (defn- create-log-entry-object
   "Creates a full LogEntry meaning that fields that are considered optional in
   the request are added into the object."
-  [created log-entry-request]
+  [log-entry-request id created-isoformat]
   (let [modified-isoformat (util/create-timestamp-isoformat)
-        created-isoformat (util/create-timestamp-isoformat created)
         log-entry-object (assoc log-entry-request
-                                :id (generate-log-id created)
+                                :id id
                                 :created created-isoformat
                                 :modified modified-isoformat
                                 :version config/jarvis-log-entry-version)]
@@ -64,11 +63,15 @@
 
 
 (s/defn post-log-entry! :- LogEntryObject
-  "Post a new log entry where new entries are appended."
+  "Post a new log entry where new entries are appended or if this is a migration
+  then the old version is updated"
   [log-entry-request :- LogEntryRequest]
   (let [created (tc/now)
-        log-entry-object (create-log-entry-object created log-entry-request)]
-    (write-log-entry-object! (generate-log-id created) log-entry-object)))
+        created-isoformat (or (:created log-entry-request)
+                              (util/create-timestamp-isoformat created))
+        id (or (:id log-entry-request) (generate-log-id created))
+        log-entry-object (create-log-entry-object log-entry-request id created-isoformat)]
+    (write-log-entry-object! id log-entry-object)))
 
 
 (s/defn update-log-entry! :- LogEntryObject
