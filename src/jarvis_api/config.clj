@@ -10,6 +10,7 @@
 (def jarvis-tag-version "0.3.0")
 (def jarvis-log-entry-version "0.7.0")
 
-(def jarvis-elasticsearch-uri "http://elasticsearch.jarvis.home:9200")
+(def jarvis-elasticsearch-uri (or (System/getenv "JARVIS_ELASTICSEARCH")
+                                  "http://elasticsearch.jarvis.home:9200"))
 ; Versioned by breakfast food
 (def jarvis-elasticsearch-index "jarvis-danish")
