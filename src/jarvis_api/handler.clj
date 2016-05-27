@@ -24,11 +24,19 @@
       tag-names-missing)))
 
 (defn- wrap-check-tags-exist
-  [handler jarvis-request]
-  (fn check-tags-exist [request]
-    (if-let [tag-names-missing (find-missing-tags jarvis-request)]
-      (bad-request { :error "Unknown tags.", :missing-tags tag-names-missing })
-      (handler jarvis-request))))
+  ([handler jarvis-request]
+   ; By default, do not skip the tags check
+   (wrap-check-tags-exist handler jarvis-request false))
+  ([handler jarvis-request should-skip]
+   (fn check-tags-exist [request]
+     (if-let [tag-names-missing (find-missing-tags jarvis-request)]
+       (do
+         ; TODO: Change to log
+         (println "Tags missing: " (pr-str tag-names-missing))
+         (if should-skip
+           (handler jarvis-request)
+           (bad-request { :error "Unknown tags.", :missing-tags tag-names-missing })))
+       (handler jarvis-request)))))
 
 (defn- wrap-request-add-self-link
   [handler]
@@ -128,6 +136,10 @@
                   (ok (jl/expand-tag fully-qualified-uri (tags/get-tag! tag-name)))
                   (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
+                 ; skipTagsCheck is intended to be used specifically for
+                 ; migrations. This is needed because tags can have circular
+                 ; relationships.
+                 :query-params [{skipTagsCheck :- s/Bool false}]
                  :return Tag
                  :body [tag-request TagRequest]
                  (-> (fn [tag-request]
@@ -140,7 +152,7 @@
                                      (jl/construct-new-tag-uri (:name tag-object)
                                                                fully-qualified-uri)))
                            (internal-server-error))))
-                     (wrap-check-tags-exist tag-request)))
+                     (wrap-check-tags-exist tag-request skipTagsCheck)))
            (PUT "/:tag-name" [:as {:keys [fully-qualified-uri]}]
                 :path-params [tag-name :- s/Str]
                 :return Tag
