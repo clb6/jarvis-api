@@ -7,6 +7,16 @@ This is the data API for the Jarvis project.  It is responsible for providing th
 
 ## Pre-requisites
 
+### Environment Variables
+
+Variable | Description | Optional? | Dockerfile? | Default
+--- | --- | --- | --- | ---
+`JARVIS_DIR_ROOT` | Top-level directory to data files for Jarvis | N | Y | None
+`JARVIS_DATA_VERSION` | Version of the data resources e.g. 20160528 | N | N | None
+`JARVIS_ELASTICSEARCH` | Elasticsearch connection full URL | Y | N | http://elasticsearch.jarvis.home:9200
+
+### Installation
+
 1. You must run the `bin/install.sh` script in order to create the necessary filesystem directory structure.
 2. Run `docker build -t jarvis-api:<version> .` to create the Docker image.
 
@@ -25,7 +35,7 @@ docker run -d -v /opt/jarvis/Elasticsearch/:/usr/share/elasticsearch/data -p 920
 Now run the jarvis-api linking it to the Elasticsearch container:
 
 ```
-docker run -d -v /opt/jarvis:/opt/jarvis -p 3000:3000 --link jarvis-elasticsearch:elasticsearch.jarvis.home --name jarvis-api-container jarvis-api:<version>
+docker run -d -v /opt/jarvis:/opt/jarvis -p 3000:3000 -e JARVIS_DATA_VERSION=20160528 --link jarvis-elasticsearch:elasticsearch.jarvis.home --name jarvis-api-container jarvis-api:<version>
 ```
 
 ### Development
