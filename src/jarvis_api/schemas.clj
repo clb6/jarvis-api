@@ -60,3 +60,29 @@
                            :count s/Num
                            :latest s/Str
                            :oldest s/Str })
+
+
+; https://www.elastic.co/guide/en/elasticsearch/guide/current/lat-lon-formats.html
+(s/defschema Location { :name s/Str
+                        ; example, "40.715, -74.011"
+                        :coordinates s/Str })
+
+(s/defschema EventObject { :eventId s/Str
+                           :created s/Str
+                           :occurred s/Str
+                           :location (s/maybe Location)
+                           :category (s/enum :consumed :produced :experienced
+                                              :executed :detected)
+                           :source s/Str
+                           :weight s/Num
+                           :description s/Str })
+
+(s/defschema Event EventObject)
+
+(s/defschema EventRequest { (s/optional-key :occurred) s/Str
+                            (s/optional-key :location) Location
+                            :category (s/enum :consumed :produced :experienced
+                                              :executed :detected)
+                            :source s/Str
+                            :weight s/Num
+                            :description s/Str })

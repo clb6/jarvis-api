@@ -42,6 +42,7 @@
 
 (def construct-new-log-entry-uri (partial construct-new-jarvis-resource-uri "logentries"))
 (def construct-new-tag-uri (partial construct-new-jarvis-resource-uri "tags"))
+(def construct-new-event-uri (partial construct-new-jarvis-resource-uri "events"))
 
 (defn- replace-tags-with-links
   [fully-qualified-uri jarvis-object]

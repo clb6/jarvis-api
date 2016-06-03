@@ -18,7 +18,11 @@
         document)))
 
 (defn write-jarvis-document!
-  [document-type file-path create-file-representation document-id document]
+  "First impl just simply calls PUT on Elasticsearch. Second impl is a compound
+  transaction of trying to write to file and to Elasticsearch or not."
+  ([document-type document-id document]
+   (jes/put-jarvis-document document-type document-id document))
+  ([document-type file-path create-file-representation document-id document]
   (let [document-prev (jes/get-jarvis-document document-type document-id)]
     (letfn [(rollback []
               (try
@@ -42,7 +46,7 @@
         (log/error (str "Error writing document: " (.getMessage e)))
         ; Try to rollback changes
         (rollback)
-        )))))
+        ))))))
 
 (defn get-jarvis-document!
   [document-type document-id]

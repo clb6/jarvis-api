@@ -7,10 +7,12 @@
             [clj-logging-config.log4j :refer [set-loggers!]]
             [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [LogEntryRequest LogEntry
-                                        Tag TagRequest DataSummary Link]]
+                                        Tag TagRequest DataSummary Link
+                                        Event EventRequest]]
             [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]
+            [jarvis-api.resources.events :as events]
             [jarvis-api.resources.datasummary :as dsummary]))
 
 
@@ -168,6 +170,18 @@
                           (not-found))
                         (bad-request)))
                     (wrap-check-tags-exist tag-request))))
+  (context "/events" []
+           :tags ["events"]
+           :summary "API to handle events"
+           :middleware [wrap-request-add-self-link]
+           (POST "/" [:as {:keys [fully-qualified-uri]}]
+                 :return Event
+                 :body [event-request EventRequest]
+                 (let [event (events/post-event! event-request)]
+                   (header (created event) "Location"
+                           (jl/construct-new-event-uri (:eventId event)
+                                                       fully-qualified-uri)))
+                 ))
   )
 
 

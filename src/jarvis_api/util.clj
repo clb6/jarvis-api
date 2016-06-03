@@ -15,3 +15,8 @@
   "Create a string representation in ISO-8601 of now"
   ([] (create-timestamp-isoformat (tc/now)))
   ([timestamp] (tf/unparse (tf/formatters :date-hour-minute-second) timestamp)))
+
+
+(defn generate-uuid
+  []
+  (.toString (java.util.UUID/randomUUID)))
