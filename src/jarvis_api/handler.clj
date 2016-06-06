@@ -174,6 +174,12 @@
            :tags ["events"]
            :summary "API to handle events"
            :middleware [wrap-request-add-self-link]
+           (GET "/:event-id" [:as {:keys [fully-qualified-uri]}]
+                :path-params [event-id :- s/Str]
+                :return Event
+                (if-let [event-object (events/get-event! event-id)]
+                  (ok event-object)
+                  (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
                  :return Event
                  :body [event-request EventRequest]

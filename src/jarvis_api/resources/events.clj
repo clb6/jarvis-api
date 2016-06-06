@@ -6,6 +6,11 @@
             [jarvis-api.util :as util]))
 
 
+(s/defn get-event! :- EventObject
+  [event-id :- String]
+  (jda/get-jarvis-document! "events" event-id))
+
+
 (s/defn post-event! :- EventObject
   [event-request :- EventRequest]
   (let [created-isoformat (util/create-timestamp-isoformat)
