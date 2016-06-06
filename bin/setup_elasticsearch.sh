@@ -13,5 +13,7 @@ curl -X PUT $URL_ELASTICSEARCH/jarvis-$JARVIS_DATA_VERSION/_mapping/tags -d \
     @$DIR_MAPPINGS/mapping_tags.json
 curl -X PUT $URL_ELASTICSEARCH/jarvis-$JARVIS_DATA_VERSION/_mapping/logentries -d \
     @$DIR_MAPPINGS/mapping_log_entries.json
+curl -X PUT $URL_ELASTICSEARCH/jarvis-$JARVIS_DATA_VERSION/_mapping/events -d \
+    @$DIR_MAPPINGS/mapping_events.json
 # Moving away from alias but keep here for now
 #curl -X PUT $URL_ELASTICSEARCH/jarvis-$JARVIS_DATA_VERSION/_alias/jarvis

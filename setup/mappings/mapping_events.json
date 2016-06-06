@@ -1,0 +1,41 @@
+{
+    "properties": {
+        "description": {
+            "index": "analyzed",
+            "type": "string"
+        },
+        "weight": {
+            "type": "long"
+        },
+        "source": {
+            "index": "not_analyzed",
+            "type": "string"
+        },
+        "category": {
+            "index": "not_analyzed",
+            "type": "string"
+        },
+        "location": {
+            "type": "nested",
+            "properties": {
+                "name": {
+                    "index": "not_analyzed",
+                    "type": "string"
+                },
+                "coordinates": {
+                    "type": "geo_point"
+                }
+            }
+        },
+        "occurred": {
+            "type": "date"
+        },
+        "created": {
+            "type": "date"
+        },
+        "eventId": {
+            "index": "not_analyzed",
+            "type": "string"
+        }
+    }
+}
