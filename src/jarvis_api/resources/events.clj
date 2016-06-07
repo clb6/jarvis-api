@@ -6,6 +6,15 @@
             [jarvis-api.util :as util]))
 
 
+(defn query-events
+  "Returns { :items [EventObjects] :total Long } if there are no hits then :items is
+  an empty list"
+  [category from]
+  (let [query-criterias (jda/add-query-criteria-category category)
+        query-result (jda/query-events query-criterias from)]
+    { :items (jda/get-hits-from-query query-result)
+      :total (jda/get-total-hits-from-query query-result) }))
+
 (s/defn get-event! :- EventObject
   [event-id :- String]
   (jda/get-jarvis-document! "events" event-id))

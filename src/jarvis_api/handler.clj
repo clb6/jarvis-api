@@ -174,6 +174,15 @@
            :tags ["events"]
            :summary "API to handle events"
            :middleware [wrap-request-add-self-link]
+           (GET "/" [:as {:keys [fully-qualified-uri]}]
+                :query-params [{category :- s/Str ""} {from :- Long 0}]
+                :return { :items [Event], :total Long, :links [Link] }
+                (let [query-result (events/query-events category from)
+                      response (assoc query-result :links
+                                      (jl/generate-query-links (:total query-result)
+                                                               from
+                                                               fully-qualified-uri))]
+                  (ok response)))
            (GET "/:event-id" [:as {:keys [fully-qualified-uri]}]
                 :path-params [event-id :- s/Str]
                 :return Event
