@@ -8,7 +8,7 @@
             [org.bovinegenius.exploding-fish :as ef]
             [jarvis-api.schemas :refer [LogEntryRequest LogEntry
                                         Tag TagRequest DataSummary Link
-                                        Event EventRequest]]
+                                        Event EventRequest event-categories]]
             [jarvis-api.links :as jl]
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]
@@ -175,7 +175,7 @@
            :summary "API to handle events"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                :query-params [{category :- s/Str nil} {weight :- Long 0}
+                :query-params [{category :- event-categories nil} {weight :- Long 0}
                                {from :- Long 0}]
                 :return { :items [Event], :total Long, :links [Link] }
                 (let [query-result (events/query-events category weight from)
