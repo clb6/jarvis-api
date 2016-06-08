@@ -68,7 +68,7 @@
            :summary "API to handle log entries"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                :query-params [{tags :- s/Str ""} {searchterm :- s/Str ""}
+                :query-params [{tags :- s/Str nil} {searchterm :- s/Str nil}
                                {from :- Long 0}]
                 :return { :items [LogEntry], :total Long, :links [Link] }
                 (let [query-result (logs/query-log-entries tags searchterm from)
@@ -118,7 +118,7 @@
            :summary "API to handle tags"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                :query-params [{name :- s/Str ""} {tags :- s/Str ""}
+                :query-params [{name :- s/Str nil} {tags :- s/Str nil}
                                 {from :- Long 0}]
                 :return { :items [Tag], :total Long, :links [Link] }
                 (let [query-result (tags/query-tags name tags from)
@@ -175,9 +175,10 @@
            :summary "API to handle events"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                :query-params [{category :- s/Str ""} {from :- Long 0}]
+                :query-params [{category :- s/Str nil} {weight :- Long 0}
+                               {from :- Long 0}]
                 :return { :items [Event], :total Long, :links [Link] }
-                (let [query-result (events/query-events category from)
+                (let [query-result (events/query-events category weight from)
                       response (assoc query-result :links
                                       (jl/generate-query-links (:total query-result)
                                                                from

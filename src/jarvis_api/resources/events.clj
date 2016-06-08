@@ -9,8 +9,9 @@
 (defn query-events
   "Returns { :items [EventObjects] :total Long } if there are no hits then :items is
   an empty list"
-  [category from]
+  [category weight from]
   (let [query-criterias (jda/add-query-criteria-category category)
+        query-criterias (jda/add-query-criteria-weight weight query-criterias)
         query-result (jda/query-events query-criterias from)]
     { :items (jda/get-hits-from-query query-result)
       :total (jda/get-total-hits-from-query query-result) }))

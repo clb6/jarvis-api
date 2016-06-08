@@ -49,9 +49,9 @@
   ([query-criteria-constructor field value]
   (add-query-criteria query-criteria-constructor field value []))
   ([query-criteria-constructor field value query-array]
-   (if-not (or (nil? value) (empty? value))
-     (conj query-array (query-criteria-constructor field value))
-     query-array)))
+   (if (nil? value)
+     query-array
+     (conj query-array (query-criteria-constructor field value)))))
 
 (def add-query-criteria-wildcard (partial add-query-criteria
                                           (fn[field value]
@@ -60,6 +60,10 @@
 (def add-query-criteria-match (partial add-query-criteria
                                        (fn[field value]
                                          (esq/match field value))))
+
+(def add-query-criteria-range-gte (partial add-query-criteria
+                                           (fn[field value]
+                                             (esq/range field { "gte"  value }))))
 
 (defn query-jarvis-documents
   "Constrained Elasticsearch querying.
