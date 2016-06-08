@@ -53,8 +53,8 @@
   (jes/get-jarvis-document document-type document-id))
 
 
-(def add-query-criteria-tag-name (partial jes/add-query-criteria-wildcard :name))
-(def add-query-criteria-tags (partial jes/add-query-criteria-wildcard :tags))
+(def add-query-criteria-tag-name (partial jes/add-query-criteria-query-string :name))
+(def add-query-criteria-tags (partial jes/add-query-criteria-query-string :tags))
 
 ; Specifically for log entries
 (def add-query-criteria-body (partial jes/add-query-criteria-match :body))

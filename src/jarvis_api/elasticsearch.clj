@@ -45,7 +45,7 @@
 
 (defn add-query-criteria
   "Helper method to build Elasticsearch query request where this method adds a
-  wildcard query to a list of queries that is intended for a bool compound query."
+  query to a list of queries that is intended for a bool compound query."
   ([query-criteria-constructor field value]
   (add-query-criteria query-criteria-constructor field value []))
   ([query-criteria-constructor field value query-array]
@@ -53,9 +53,13 @@
      query-array
      (conj query-array (query-criteria-constructor field value)))))
 
-(def add-query-criteria-wildcard (partial add-query-criteria
-                                          (fn[field value]
-                                            (esq/wildcard { field (str "*" value "*") }))))
+; NOTE: Went from "wildcard" to "query-string" because of issue with case
+; sensitivity of the "wildcard"
+(def add-query-criteria-query-string (partial add-query-criteria
+                                              (fn[field value]
+                                                (esq/query-string
+                                                  { "query" (str (name field)
+                                                                 ":*" value "*") }))))
 
 (def add-query-criteria-match (partial add-query-criteria
                                        (fn[field value]
