@@ -87,3 +87,4 @@
 
 (def get-created-range-tags (partial get-created-range "tags"))
 (def get-created-range-log-entries (partial get-created-range "logentries"))
+(def get-created-range-events (partial get-created-range "events"))

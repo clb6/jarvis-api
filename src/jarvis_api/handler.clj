@@ -60,7 +60,7 @@
   (context "/datasummary/:data-type" []
             :summary "Endpoint that provides a summary of Jarvis data type"
             (GET "/" [data-type]
-                  :path-params [data-type :- (s/enum :tags :logentries)]
+                  :path-params [data-type :- (s/enum :tags :logentries :events)]
                   :return DataSummary
                   (ok (dsummary/generate-data-summary data-type))))
   (context "/logentries" []

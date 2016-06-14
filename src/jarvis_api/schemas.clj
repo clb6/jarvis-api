@@ -55,7 +55,7 @@
 (s/defschema Tag (dissoc (merge TagObject { :tagLinks [Link] }) :tags))
 
 
-(s/defschema DataSummary { :data-type (s/enum :tags :logentries)
+(s/defschema DataSummary { :data-type (s/enum :tags :logentries :events)
                            :status (s/enum :ok :inconsistent)
                            :count s/Num
                            :latest s/Str
