@@ -196,8 +196,16 @@
                  (let [event (events/post-event! event-request)]
                    (header (created event) "Location"
                            (jl/construct-new-event-uri (:eventId event)
-                                                       fully-qualified-uri)))
-                 ))
+                                                       fully-qualified-uri))))
+           (PUT "/:event-id" [:as {:keys [fully-qualified-uri]}]
+                :path-params [event-id :- s/Str]
+                :return Event
+                :body [event-request EventRequest]
+                (if-let [event-object (events/get-event! event-id)]
+                  (let [event-object (events/update-event! event-object event-request)]
+                    (header (ok event-object) "Location" fully-qualified-uri))
+                  (not-found)))
+           )
   )
 
 

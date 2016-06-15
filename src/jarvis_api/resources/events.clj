@@ -21,6 +21,10 @@
   (jda/get-jarvis-document! "events" event-id))
 
 
+(defn- write-event-object!
+  [event-object]
+  (jda/write-jarvis-document! "events" (:eventId event-object) event-object))
+
 (s/defn post-event! :- EventObject
   [event-request :- EventRequest]
   (let [created-isoformat (util/create-timestamp-isoformat)
@@ -28,4 +32,10 @@
         event-object (assoc event-request :eventId (util/generate-uuid)
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
-    (jda/write-jarvis-document! "events" (:eventId event-object) event-object)))
+    (write-event-object! event-object)))
+
+
+(s/defn update-event! :- EventObject
+  [event-object :- EventObject event-request :- EventRequest]
+  (let [updated-event-object (merge event-object event-request)]
+    (write-event-object! updated-event-object)))
