@@ -7,6 +7,7 @@ function showSummary {
     if [ "$1" != "dev" ]; then
         curl localhost:3000/datasummary/logentries | jq .
         curl localhost:3000/datasummary/tags | jq .
+        curl localhost:3000/datasummary/events | jq .
     fi
 
 }
