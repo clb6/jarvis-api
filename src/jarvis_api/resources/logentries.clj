@@ -5,7 +5,8 @@
             [jarvis-api.schemas :refer [LogEntryObject LogEntryRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.data_access :as jda]
+            [jarvis-api.data_access.common :as jda]
+            [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.util :as util]))
 
 
@@ -13,11 +14,11 @@
   "Returns { :items [LogEntryObject] :total Long } if there are no hits then :items is
   an empty list"
   [tags searchterm from]
-  (let [query-criterias (jda/add-query-criteria-tags tags)
-        query-criterias (jda/add-query-criteria-body searchterm query-criterias)
-        query-result (jda/query-log-entries query-criterias from)]
-    { :items (jda/get-hits-from-query query-result)
-      :total (jda/get-total-hits-from-query query-result) }))
+  (let [query-criterias (jqh/add-query-criteria-tags tags)
+        query-criterias (jqh/add-query-criteria-body searchterm query-criterias)
+        query-result (jqh/query-log-entries query-criterias from)]
+    { :items (jqh/get-hits-from-query query-result)
+      :total (jqh/get-total-hits-from-query query-result) }))
 
 (s/defn get-log-entry! :- LogEntryObject
   [id :- BigInteger]

@@ -1,4 +1,4 @@
-(ns jarvis-api.elasticsearch
+(ns jarvis-api.database.elasticsearch
   (:require [clojurewerkz.elastisch.rest  :as esr]
             [clojurewerkz.elastisch.rest.document :as esd]
             [clojurewerkz.elastisch.rest.response :refer [aggregations-from]]

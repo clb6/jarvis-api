@@ -4,18 +4,19 @@
             [jarvis-api.schemas :refer [TagObject TagRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.data_access :as jda]
+            [jarvis-api.data_access.common :as jda]
+            [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.util :as util]
             [jarvis-api.links :as jl]))
 
 
 (defn query-tags
   [tag-name tags from]
-  (let [query-criterias (jda/add-query-criteria-tag-name tag-name)
-        query-criterias (jda/add-query-criteria-tags tags query-criterias)
-        query-result (jda/query-tags query-criterias from)]
-    { :items (jda/get-hits-from-query query-result)
-      :total (jda/get-total-hits-from-query query-result) }))
+  (let [query-criterias (jqh/add-query-criteria-tag-name tag-name)
+        query-criterias (jqh/add-query-criteria-tags tags query-criterias)
+        query-result (jqh/query-tags query-criterias from)]
+    { :items (jqh/get-hits-from-query query-result)
+      :total (jqh/get-total-hits-from-query query-result) }))
 
 
 (defn- fetch-tag-files!

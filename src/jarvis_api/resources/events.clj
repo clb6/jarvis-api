@@ -2,7 +2,8 @@
   (:require [clojure.string :as cs]
             [schema.core :as s]
             [jarvis-api.schemas :refer [EventObject EventRequest]]
-            [jarvis-api.data_access :as jda]
+            [jarvis-api.data_access.common :as jda]
+            [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.util :as util]))
 
 
@@ -10,11 +11,11 @@
   "Returns { :items [EventObjects] :total Long } if there are no hits then :items is
   an empty list"
   [category weight from]
-  (let [query-criterias (jda/add-query-criteria-category category)
-        query-criterias (jda/add-query-criteria-weight weight query-criterias)
-        query-result (jda/query-events query-criterias from)]
-    { :items (jda/get-hits-from-query query-result)
-      :total (jda/get-total-hits-from-query query-result) }))
+  (let [query-criterias (jqh/add-query-criteria-category category)
+        query-criterias (jqh/add-query-criteria-weight weight query-criterias)
+        query-result (jqh/query-events query-criterias from)]
+    { :items (jqh/get-hits-from-query query-result)
+      :total (jqh/get-total-hits-from-query query-result) }))
 
 (s/defn get-event! :- EventObject
   [event-id :- String]

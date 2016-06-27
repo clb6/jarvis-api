@@ -2,8 +2,7 @@
   (:require [clojure.string :refer [lower-case blank?]]
             [org.bovinegenius.exploding-fish :as ef]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [LogEntry Tag]]
-            [jarvis-api.data_access :as jda]))
+            [jarvis-api.schemas :refer [LogEntry Tag]]))
 
 
 (def default-page-size 10)

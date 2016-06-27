@@ -1,7 +1,7 @@
 (ns jarvis-api.resources.datasummary
-  (:require [jarvis-api.elasticsearch :as es]
+  (:require [jarvis-api.database.elasticsearch :as es]
             [jarvis-api.config :as config]
-            [jarvis-api.data_access :as jda]))
+            [jarvis-api.data_access.datasummary :as jda]))
 
 
 (defn- get-data-type-file-seq
