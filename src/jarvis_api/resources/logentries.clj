@@ -4,8 +4,7 @@
             [schema.core :as s]
             [jarvis-api.schemas :refer [LogEntryObject LogEntryRequest]]
             [jarvis-api.config :as config]
-            [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.data_access.common :as jda]
+            [jarvis-api.data_access.logentries :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.util :as util]))
 
@@ -22,7 +21,7 @@
 
 (s/defn get-log-entry! :- LogEntryObject
   [id :- BigInteger]
-  (if-let [log-entry (jda/get-jarvis-document! "logentries" id)]
+  (if-let [log-entry (jda/get-log-entry-object! id)]
     (update-in log-entry [:id] biginteger)))
 
 (s/defn log-entry-exists?
@@ -30,21 +29,9 @@
   ((comp not nil?) (get-log-entry! id)))
 
 
-; Tried to use the `keys` method from the schema but the sort order is not
-; predictable. Maybe use two separate vectors to construct the schema via zip.
-(def metadata-keys-log-entries (list :id :author :created :modified :occurred
-                                     :version :tags :parent :event :todo :setting))
-(def create-log-entry-file (partial mf/create-file metadata-keys-log-entries))
-
 (defn- generate-log-id
   [created]
   (tc/in-seconds (tc/interval (tc/epoch) created)))
-
-(defn- write-log-entry-object!
-  [id log-entry-object]
-  (let [log-entry-path (format "%s/%s.md" config/jarvis-log-directory id)]
-    (jda/write-jarvis-document! "logentries" log-entry-path create-log-entry-file
-                                id log-entry-object)))
 
 (defn- create-log-entry-object
   "Creates a full LogEntry meaning that fields that are considered optional in
@@ -72,7 +59,7 @@
                               (util/create-timestamp-isoformat created))
         id (or (:id log-entry-request) (generate-log-id created))
         log-entry-object (create-log-entry-object log-entry-request id created-isoformat)]
-    (write-log-entry-object! id log-entry-object)))
+    (jda/write-log-entry-object! log-entry-object)))
 
 
 (s/defn update-log-entry! :- LogEntryObject
@@ -80,4 +67,4 @@
   (let [updated-log-entry-object (merge log-entry-object log-entry-request)
         updated-log-entry-object (assoc updated-log-entry-object
                                         :modified (util/create-timestamp-isoformat))]
-    (write-log-entry-object! (:id updated-log-entry-object) updated-log-entry-object)))
+    (jda/write-log-entry-object! updated-log-entry-object)))
