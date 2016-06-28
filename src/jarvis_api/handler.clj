@@ -49,6 +49,18 @@
                              :path uri :query query-string})]
       (handler (assoc r :fully-qualified-uri self-uri)))))
 
+(defn- wrap-check-event-id
+  ; Middleware to check that an event id is valid before proceeding.
+  [handler]
+  (fn check-event-id [{:keys [params] :as r}]
+      (let [event-id (:event-id params)]
+        (if (events/get-event! event-id)
+          (handler r)
+          (not-found { :error "Unknown event" })
+          ))
+      )
+  )
+
 
 (defapi app
   ; TODO: Should revisit and enhance the use of swagger-routes. Use :ui, :spec options
@@ -83,7 +95,7 @@
                   (ok response))))
   (context "/events/:event-id/logentries" []
            :tags ["logentries"]
-           :middleware [wrap-request-add-self-link]
+           :middleware [wrap-request-add-self-link wrap-check-event-id]
            (GET "/:id" [:as {:keys [fully-qualified-uri]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
