@@ -54,20 +54,20 @@
   ; TODO: Should revisit and enhance the use of swagger-routes. Use :ui, :spec options
   ; https://github.com/metosin/compojure-api/wiki/Migration-Guide-to-1.0.0#swagger-routes
   (swagger-routes
-    { :data { :info { :title "Jarvis-api" :description "Jarvis data api" }
-              :tags [{:name "logentries" :description "handles Jarvis log entries"}
-                     {:name "tags" :description "handles Jarvis tags"}]}})
+    { :data { :info { :title "jarvis-api" :description "jarvis data api" }
+              :tags [{:name "logentries" :description ""}
+                     {:name "tags" :description ""}]}})
   (context "/datasummary/:data-type" []
-            :summary "Endpoint that provides a summary of Jarvis data type"
-            (GET "/" [data-type]
-                  :path-params [data-type :- (s/enum :tags :logentries :events)]
-                  :return DataSummary
-                  (ok (dsummary/generate-data-summary data-type))))
-  (context "/logentries" []
-           :tags ["logentries"]
-           :summary "API to handle log entries"
+           :tags ["datasummary"]
+           :summary "Endpoint that provides a summary of jarvis resource types"
+           (GET "/" [data-type]
+                :path-params [data-type :- (s/enum :tags :logentries :events)]
+                :return DataSummary
+                (ok (dsummary/generate-data-summary data-type))))
+  (context "/search" []
+           :tags ["search"]
            :middleware [wrap-request-add-self-link]
-           (GET "/" [:as {:keys [fully-qualified-uri]}]
+           (GET "/logentries" [:as {:keys [fully-qualified-uri]}]
                 :query-params [{tags :- s/Str nil} {searchterm :- s/Str nil}
                                {from :- Long 0}]
                 :return { :items [LogEntry], :total Long, :links [Link] }
@@ -80,7 +80,10 @@
                                       (jl/generate-query-links (:total query-result)
                                                                from
                                                                fully-qualified-uri))]
-                  (ok response)))
+                  (ok response))))
+  (context "/events/:event-id/logentries" []
+           :tags ["logentries"]
+           :middleware [wrap-request-add-self-link]
            (GET "/:id" [:as {:keys [fully-qualified-uri]}]
                 ; Don't know why BigInteger is not acceptable.
                 :path-params [id :- Long]
