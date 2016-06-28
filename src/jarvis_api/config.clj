@@ -22,3 +22,5 @@
 (def jarvis-elasticsearch-uri (or (System/getenv "JARVIS_ELASTICSEARCH")
                                   "http://elasticsearch.jarvis.home:9200"))
 (def jarvis-elasticsearch-index (versionize-name "jarvis" jarvis-data-version))
+
+(def jarvis-redis-host (or (System/getenv "JARVIS_REDIS") "redis.jarvis.home"))

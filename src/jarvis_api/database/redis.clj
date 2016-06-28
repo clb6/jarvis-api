@@ -1,7 +1,8 @@
 (ns jarvis-api.database.redis
-  (:require [taoensso.carmine :as car :refer (wcar)]))
+  (:require [taoensso.carmine :as car :refer (wcar)]
+            [jarvis-api.config :as config]))
 
 
-(def conn {:pool {} :spec {:host "127.0.0.1" :port 6379}})
+(def conn {:pool {} :spec {:host config/jarvis-redis-host :port 6379}})
 (defmacro wcar* [& body] `(car/wcar conn ~@body))
 

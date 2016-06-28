@@ -14,6 +14,7 @@ Variable | Description | Optional? | Dockerfile? | Default
 `JARVIS_DIR_ROOT` | Top-level directory to data files for Jarvis | N | Y | None
 `JARVIS_DATA_VERSION` | Version of the data resources e.g. 20160528 | N | N | None
 `JARVIS_ELASTICSEARCH` | Elasticsearch connection full URL | Y | N | http://elasticsearch.jarvis.home:9200
+`JARVIS_REDIS` | Redis hostname  | Y | N | redis.jarvis.home
 
 ### Installation
 
