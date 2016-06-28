@@ -14,7 +14,7 @@
 
 (def query-tags (partial jes/query-jarvis-documents "tags" { "name" "asc" }))
 (def query-log-entries (partial jes/query-jarvis-documents "logentries"
-                               { "occurred" "desc" }))
+                               { "created" "desc" }))
 (def query-events (partial jes/query-jarvis-documents "events" { "occurred" "desc" }))
 
 (defn get-hits-from-query

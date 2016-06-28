@@ -105,9 +105,11 @@
                   (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
                  :return LogEntry
+                 :path-params [event-id :- s/Str]
                  :body [log-entry-request LogEntryRequest]
                  (-> (fn [log-entry-request]
-                       (if-let [log-entry-object (logs/post-log-entry! log-entry-request)]
+                       (if-let [log-entry-object (logs/post-log-entry! log-entry-request
+                                                                       event-id)]
                          (let [log-entry (jl/expand-log-entry fully-qualified-uri
                                                               log-entry-object)]
                            (header (created log-entry) "Location"

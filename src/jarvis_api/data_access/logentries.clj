@@ -24,8 +24,8 @@
 
 ; Tried to use the `keys` method from the schema but the sort order is not
 ; predictable. Maybe use two separate vectors to construct the schema via zip.
-(def metadata-keys-log-entries (list :id :author :created :modified :occurred
-                                     :version :tags :parent :event :todo :setting))
+(def metadata-keys-log-entries (list :id :author :created :modified
+                                     :version :tags :parent :event :todo))
 (def create-log-entry-file (partial mf/create-file metadata-keys-log-entries))
 
 
