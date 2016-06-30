@@ -28,9 +28,11 @@
 
 (s/defn post-event! :- EventObject
   [event-request :- EventRequest]
-  (let [created-isoformat (util/create-timestamp-isoformat)
+  (let [event-id (or (:eventId event-request) (util/generate-uuid))
+        created-isoformat (or (:created event-request)
+                              (util/create-timestamp-isoformat))
         occurred-isoformat (or (:occurred event-request) created-isoformat)
-        event-object (assoc event-request :eventId (util/generate-uuid)
+        event-object (assoc event-request :eventId event-id
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
     (write-event-object! event-object)))

@@ -58,7 +58,7 @@
 
 
 (def event-categories (s/enum :consumed :produced :experienced :interacted
-                              :formulated :completed :detected :measured))
+                              :formulated :completed :detected :measured :migrated))
 
 ; https://www.elastic.co/guide/en/elasticsearch/guide/current/lat-lon-formats.html
 (s/defschema Location { :name s/Str
@@ -76,7 +76,10 @@
 
 (s/defschema Event EventObject)
 
-(s/defschema EventRequest { (s/optional-key :occurred) s/Str
+(s/defschema EventRequest { ; Optionally put eventId and created here for migration purpose
+                            (s/optional-key :eventId) s/Str
+                            (s/optional-key :created) s/Str
+                            (s/optional-key :occurred) s/Str
                             (s/optional-key :location) Location
                             :category event-categories
                             :source s/Str
