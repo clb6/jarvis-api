@@ -74,7 +74,7 @@
                            :weight s/Num
                            :description s/Str })
 
-(s/defschema Event EventObject)
+(s/defschema Event (merge EventObject { :logEntryLinks [Link] }))
 
 (s/defschema EventRequest { ; Optionally put eventId and created here for migration purpose
                             (s/optional-key :eventId) s/Str

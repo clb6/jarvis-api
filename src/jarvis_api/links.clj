@@ -2,7 +2,8 @@
   (:require [clojure.string :refer [lower-case blank?]]
             [org.bovinegenius.exploding-fish :as ef]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [LogEntry Tag]]))
+            [jarvis-api.schemas :refer [LogEntry Tag EventObject Event]]
+            [jarvis-api.data_access.events :as dae]))
 
 
 (def default-page-size 10)
@@ -39,9 +40,18 @@
   (str (assoc src-uri :path (str "/" resource-type "/" resource-id)
               :query nil)))
 
+; TODO: logentry uri must change to include event
 (def construct-new-log-entry-uri (partial construct-new-jarvis-resource-uri "logentries"))
 (def construct-new-tag-uri (partial construct-new-jarvis-resource-uri "tags"))
 (def construct-new-event-uri (partial construct-new-jarvis-resource-uri "events"))
+
+(defn- construct-log-entry-link
+  [fully-qualified-uri rel event-id log-entry-id]
+  { :title log-entry-id :rel rel
+    :href (str (assoc fully-qualified-uri
+                      :path (str "/events/" event-id "/logentries/" log-entry-id)
+                      :query nil)) }
+  )
 
 (defn- replace-tags-with-links
   [fully-qualified-uri jarvis-object]
@@ -67,6 +77,7 @@
                         })]
     (dissoc (assoc log-entry :parentLink parent-link) :parent)))
 
+
 (s/defn expand-log-entry
   [fully-qualified-uri log-entry :- LogEntry]
   (->> log-entry
@@ -77,3 +88,11 @@
   [fully-qualified-uri tag :- Tag]
   (->> tag
       (replace-tags-with-links fully-qualified-uri)))
+
+(s/defn expand-event :- Event
+  [fully-qualified-uri event-object :- EventObject]
+  (let [log-entry-ids (dae/get-log-entry-ids-by-event-id (:eventId event-object))
+        log-entry-link-func (partial construct-log-entry-link fully-qualified-uri
+                                     "log-entry" (:eventId event-object))
+        log-entry-links (map log-entry-link-func log-entry-ids)]
+    (assoc event-object :logEntryLinks log-entry-links)))
