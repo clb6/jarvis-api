@@ -199,18 +199,22 @@
                       response (assoc query-result :links
                                       (jl/generate-query-links (:total query-result)
                                                                from
-                                                               fully-qualified-uri))]
+                                                               fully-qualified-uri))
+                      response (assoc response :items
+                                      (map (partial jl/expand-event fully-qualified-uri)
+                                           (:items response)))]
                   (ok response)))
            (GET "/:event-id" [:as {:keys [fully-qualified-uri]}]
                 :path-params [event-id :- s/Str]
                 :return Event
                 (if-let [event-object (events/get-event! event-id)]
-                  (ok event-object)
+                  (ok (jl/expand-event fully-qualified-uri event-object))
                   (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
                  :return Event
                  :body [event-request EventRequest]
-                 (let [event (events/post-event! event-request)]
+                 (let [event-object (events/post-event! event-request)
+                       event (jl/expand-event fully-qualified-uri event-object)]
                    (header (created event) "Location"
                            (jl/construct-new-event-uri (:eventId event)
                                                        fully-qualified-uri))))
@@ -219,8 +223,9 @@
                 :return Event
                 :body [event-request EventRequest]
                 (if-let [event-object (events/get-event! event-id)]
-                  (let [event-object (events/update-event! event-object event-request)]
-                    (header (ok event-object) "Location" fully-qualified-uri))
+                  (let [event-object (events/update-event! event-object event-request)
+                        event (jl/expand-event fully-qualified-uri event-object)]
+                    (header (ok event) "Location" fully-qualified-uri))
                   (not-found)))
            )
   )
