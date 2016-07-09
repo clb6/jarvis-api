@@ -28,8 +28,9 @@
                                 :body String })
 
 (s/defschema LogEntry (dissoc (merge LogEntryObject { :tagLinks [Link]
-                                                      :parentLink (s/maybe Link) })
-                              :tags :parent))
+                                                      :parentLink (s/maybe Link)
+                                                      :eventLink Link })
+                              :tags :parent :event))
 
 
 (s/defschema TagObject { :name s/Str

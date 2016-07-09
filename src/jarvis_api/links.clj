@@ -72,10 +72,18 @@
   [fully-qualified-uri event-id log-entry]
   (let [parent (:parent log-entry)
         ; Parent field can have emtpy strings unfortunately
+        ; TODO: Fix - parent might not be from the same event..right?
         parent-link (if (not (blank? parent))
                       (construct-log-entry-link fully-qualified-uri "parent"
                                                 event-id parent))]
     (dissoc (assoc log-entry :parentLink parent-link) :parent)))
+
+(defn- replace-event-with-link
+  [fully-qualified-uri log-entry]
+  (let [event-id (:event log-entry)
+        event-link { :title event-id :rel "event"
+                     :href (construct-new-event-uri event-id fully-qualified-uri) }]
+    (dissoc (assoc log-entry :eventLink event-link) :event)))
 
 
 (s/defn expand-log-entry
@@ -84,7 +92,8 @@
   ([fully-qualified-uri event-id log-entry :- LogEntry]
    (->> log-entry
         (replace-parent-with-link fully-qualified-uri event-id)
-        (replace-tags-with-links fully-qualified-uri)))
+        (replace-tags-with-links fully-qualified-uri)
+        (replace-event-with-link fully-qualified-uri)))
   ([fully-qualified-uri log-entry :- LogEntry]
    (expand-log-entry fully-qualified-uri (:event log-entry) log-entry)))
 
