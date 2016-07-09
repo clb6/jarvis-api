@@ -40,17 +40,20 @@
   (str (assoc src-uri :path (str "/" resource-type "/" resource-id)
               :query nil)))
 
-; TODO: logentry uri must change to include event
-(def construct-new-log-entry-uri (partial construct-new-jarvis-resource-uri "logentries"))
 (def construct-new-tag-uri (partial construct-new-jarvis-resource-uri "tags"))
 (def construct-new-event-uri (partial construct-new-jarvis-resource-uri "events"))
+
+(defn construct-new-log-entry-uri
+  [fully-qualified-uri event-id log-entry-id]
+  (str (assoc fully-qualified-uri :path (str "/events/" event-id "/logentries/"
+                                             log-entry-id)
+              :query nil))
+  )
 
 (defn- construct-log-entry-link
   [fully-qualified-uri rel event-id log-entry-id]
   { :title log-entry-id :rel rel
-    :href (str (assoc fully-qualified-uri
-                      :path (str "/events/" event-id "/logentries/" log-entry-id)
-                      :query nil)) }
+    :href (construct-new-log-entry-uri fully-qualified-uri event-id log-entry-id) }
   )
 
 (defn- replace-tags-with-links
@@ -66,23 +69,24 @@
       (dissoc (assoc jarvis-object :tagLinks tag-links) :tags))))
 
 (defn- replace-parent-with-link
-  [fully-qualified-uri log-entry]
+  [fully-qualified-uri event-id log-entry]
   (let [parent (:parent log-entry)
         ; Parent field can have emtpy strings unfortunately
         parent-link (if (not (blank? parent))
-                      { :title parent
-                        :rel "parent"
-                        :href (construct-new-jarvis-resource-uri "logentries" parent
-                                                                  fully-qualified-uri)
-                        })]
+                      (construct-log-entry-link fully-qualified-uri "parent"
+                                                event-id parent))]
     (dissoc (assoc log-entry :parentLink parent-link) :parent)))
 
 
 (s/defn expand-log-entry
-  [fully-qualified-uri log-entry :- LogEntry]
-  (->> log-entry
-      (replace-parent-with-link fully-qualified-uri)
-      (replace-tags-with-links fully-qualified-uri)))
+  ; REVIEW: Do I need this first version of the method since event should always
+  ; be on a log entry?
+  ([fully-qualified-uri event-id log-entry :- LogEntry]
+   (->> log-entry
+        (replace-parent-with-link fully-qualified-uri event-id)
+        (replace-tags-with-links fully-qualified-uri)))
+  ([fully-qualified-uri log-entry :- LogEntry]
+   (expand-log-entry fully-qualified-uri (:event log-entry) log-entry)))
 
 (s/defn expand-tag
   [fully-qualified-uri tag :- Tag]

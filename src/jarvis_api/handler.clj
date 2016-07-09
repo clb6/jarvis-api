@@ -98,10 +98,10 @@
            :middleware [wrap-request-add-self-link wrap-check-event-id]
            (GET "/:id" [:as {:keys [fully-qualified-uri]}]
                 ; Don't know why BigInteger is not acceptable.
-                :path-params [id :- Long]
+                :path-params [id :- Long event-id :- s/Str]
                 :return LogEntry
                 (if-let [log-entry (logs/get-log-entry! id)]
-                  (ok (jl/expand-log-entry fully-qualified-uri log-entry))
+                  (ok (jl/expand-log-entry fully-qualified-uri event-id log-entry))
                   (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
                  :return LogEntry
@@ -111,14 +111,16 @@
                        (if-let [log-entry-object (logs/post-log-entry! log-entry-request
                                                                        event-id)]
                          (let [log-entry (jl/expand-log-entry fully-qualified-uri
+                                                              event-id
                                                               log-entry-object)]
                            (header (created log-entry) "Location"
-                                   (jl/construct-new-log-entry-uri (:id log-entry-object)
-                                                                   fully-qualified-uri)))
+                                   (jl/construct-new-log-entry-uri fully-qualified-uri
+                                                                   event-id
+                                                                   (:id log-entry-object))))
                          (internal-server-error)))
                      (wrap-check-tags-exist log-entry-request)))
            (PUT "/:id" [:as {:keys [fully-qualified-uri]}]
-                :path-params [id :- Long]
+                :path-params [id :- Long event-id :- s/Str]
                 :return LogEntry
                 :body [log-entry-request LogEntryRequest]
                 (-> (fn [log-entry-request]
@@ -126,6 +128,7 @@
                         (let [log-entry-object (logs/update-log-entry! log-entry-object
                                                                        log-entry-request)
                               log-entry (jl/expand-log-entry fully-qualified-uri
+                                                             event-id
                                                              log-entry-object)]
                           (header (ok log-entry) "Location" fully-qualified-uri))
                         (not-found)))
