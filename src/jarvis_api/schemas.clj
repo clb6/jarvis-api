@@ -66,6 +66,11 @@
                         ; example, "40.715, -74.011"
                         :coordinates s/Str })
 
+; Artifacts are not stored in Jarvis but rather expected to be stored externally.
+; The justification is that artifacts are to be treated independently from events
+; and not under events.
+(s/defschema EventArtifact Link)
+
 (s/defschema EventObject { :eventId s/Str
                            :created s/Str
                            :occurred s/Str
@@ -75,7 +80,8 @@
                            :weight s/Num
                            :description s/Str })
 
-(s/defschema Event (merge EventObject { :logEntryLinks [Link] }))
+(s/defschema Event (merge EventObject { :logEntryLinks [Link]
+                                        :artifactLinks [Link] }))
 
 (s/defschema EventRequest { ; Optionally put eventId and created here for migration purpose
                             (s/optional-key :eventId) s/Str
@@ -85,4 +91,5 @@
                             :category event-categories
                             :source s/Str
                             :weight s/Num
-                            :description s/Str })
+                            :description s/Str
+                            (s/optional-key :artifacts) [Link] })

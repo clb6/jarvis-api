@@ -1,8 +1,8 @@
 (ns jarvis-api.resources.events
   (:require [clojure.string :as cs]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [EventObject EventRequest]]
-            [jarvis-api.data_access.common :as jda]
+            [jarvis-api.schemas :refer [EventObject EventRequest EventArtifact]]
+            [jarvis-api.data_access.events :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.util :as util]))
 
@@ -17,16 +17,12 @@
     { :items (jqh/get-hits-from-query query-result)
       :total (jqh/get-total-hits-from-query query-result) }))
 
-(s/defn get-event! :- EventObject
+(s/defn get-event!
   [event-id :- String]
-  (jda/get-jarvis-document! "events" event-id))
+  (jda/get-event event-id))
 
 
-(defn- write-event-object!
-  [event-object]
-  (jda/write-jarvis-document! "events" (:eventId event-object) event-object))
-
-(s/defn post-event! :- EventObject
+(s/defn post-event!
   [event-request :- EventRequest]
   (let [event-id (or (:eventId event-request) (util/generate-uuid))
         created-isoformat (or (:created event-request)
@@ -35,10 +31,10 @@
         event-object (assoc event-request :eventId event-id
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
-    (write-event-object! event-object)))
+    (jda/write-event! event-object (:artifacts event-request))))
 
 
-(s/defn update-event! :- EventObject
+(s/defn update-event!
   [event-object :- EventObject event-request :- EventRequest]
-  (let [updated-event-object (merge event-object event-request)]
-    (write-event-object! updated-event-object)))
+  (let [updated-event-object (merge event-object (dissoc event-request :artifacts))]
+    (jda/write-event! updated-event-object (:artifacts event-request))))
