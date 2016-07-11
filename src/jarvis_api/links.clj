@@ -2,8 +2,7 @@
   (:require [clojure.string :refer [lower-case blank?]]
             [org.bovinegenius.exploding-fish :as ef]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [LogEntry Tag EventObject Event]]
-            [jarvis-api.data_access.events :as dae]))
+            [jarvis-api.schemas :refer [LogEntry Tag EventObject Event EventMixin]]))
 
 
 (def default-page-size 10)
@@ -103,9 +102,11 @@
       (replace-tags-with-links fully-qualified-uri)))
 
 (s/defn expand-event :- Event
-  [fully-qualified-uri event-object :- EventObject]
-  (let [log-entry-ids (dae/get-log-entry-ids-by-event-id (:eventId event-object))
-        log-entry-link-func (partial construct-log-entry-link fully-qualified-uri
-                                     "log-entry" (:eventId event-object))
-        log-entry-links (map log-entry-link-func log-entry-ids)]
-    (assoc event-object :logEntryLinks log-entry-links)))
+  [fully-qualified-uri event-mixin :- EventMixin]
+  (let [log-entry-link-func (partial construct-log-entry-link fully-qualified-uri
+                                     "log-entry" (:eventId event-mixin))
+        log-entry-links (map log-entry-link-func (:logEntries event-mixin))
+        artifact-links (:artifacts event-mixin)]
+    (dissoc (assoc event-mixin :logEntryLinks log-entry-links :artifactLinks artifact-links)
+            :logEntries :artifacts))
+  )

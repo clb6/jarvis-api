@@ -1,7 +1,7 @@
 (ns jarvis-api.data_access.events
   (:require [clojure.tools.logging :as log]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [EventObject EventArtifact]]
+            [jarvis-api.schemas :refer [EventObject EventArtifact EventMixin]]
             [taoensso.carmine :as car]
             [jarvis-api.database.redis :as dar]
             [jarvis-api.database.elasticsearch :as jes]))
@@ -20,10 +20,12 @@
 
 (defn- create-event
   [event-object event-artifacts]
-  (assoc event-object :artifactLinks event-artifacts))
+  (let [log-entries (get-log-entry-ids-by-event-id (:eventId event-object))]
+    (assoc event-object :artifacts event-artifacts :logEntries log-entries))
+  )
 
 ; TODO: Need recovery upon failure
-(s/defn write-event!
+(s/defn write-event! :- EventMixin
   [event-object :- EventObject event-artifacts :- [EventArtifact]]
   ; Assuming Carmine will convert complex data structures into byte strings
   ; using nippy
@@ -45,7 +47,7 @@
         (log/error "Should try to rollback if exists else delete"))
       )))
 
-(defn get-event
+(s/defn get-event :- EventMixin
   [event-id]
   (let [event-object (jes/get-jarvis-document "events" event-id)
         redis-key (create-key-event-artifacts event-id)

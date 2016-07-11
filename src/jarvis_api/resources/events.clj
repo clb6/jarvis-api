@@ -1,7 +1,8 @@
 (ns jarvis-api.resources.events
   (:require [clojure.string :as cs]
             [schema.core :as s]
-            [jarvis-api.schemas :refer [EventObject EventRequest EventArtifact]]
+            [jarvis-api.schemas :refer [EventObject EventRequest EventArtifact
+                                        EventMixin]]
             [jarvis-api.data_access.events :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.util :as util]))
@@ -17,12 +18,12 @@
     { :items (jqh/get-hits-from-query query-result)
       :total (jqh/get-total-hits-from-query query-result) }))
 
-(s/defn get-event!
+(s/defn get-event! :- EventMixin
   [event-id :- String]
   (jda/get-event event-id))
 
 
-(s/defn post-event!
+(s/defn post-event! :- EventMixin
   [event-request :- EventRequest]
   (let [event-id (or (:eventId event-request) (util/generate-uuid))
         created-isoformat (or (:created event-request)
@@ -34,7 +35,7 @@
     (jda/write-event! event-object (:artifacts event-request))))
 
 
-(s/defn update-event!
+(s/defn update-event! :- EventMixin
   [event-object :- EventObject event-request :- EventRequest]
   (let [updated-event-object (merge event-object (dissoc event-request :artifacts))]
     (jda/write-event! updated-event-object (:artifacts event-request))))

@@ -80,6 +80,11 @@
                            :weight s/Num
                            :description s/Str })
 
+; This is to be returned from the data-access calls where they combine
+; event-object with the artifacts and log entries hence mixin
+(s/defschema EventMixin (merge EventObject { :logEntries [s/Str]
+                                             :artifacts [EventArtifact] }))
+
 (s/defschema Event (merge EventObject { :logEntryLinks [Link]
                                         :artifactLinks [Link] }))
 
