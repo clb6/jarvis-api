@@ -18,11 +18,19 @@
   [event-id]
   (str "event:" event-id ":artifacts"))
 
-(defn- create-event
-  [event-object event-artifacts]
-  (let [log-entries (get-log-entry-ids-by-event-id (:eventId event-object))]
-    (assoc event-object :artifacts event-artifacts :logEntries log-entries))
+(defn- make-event-object-to-event
+  ([event-object event-artifacts]
+   (let [log-entries (get-log-entry-ids-by-event-id (:eventId event-object))]
+     (assoc event-object :artifacts event-artifacts :logEntries log-entries)))
+  ([event-object]
+   (let [redis-key (create-key-event-artifacts (:eventId event-object))
+         event-artifacts (dar/wcar* (car/smembers redis-key))]
+     (make-event-object-to-event event-object event-artifacts)))
   )
+
+(s/defn make-event-objects-to-events :- [EventMixin]
+  [event-objects :- [EventObject]]
+  (map make-event-object-to-event event-objects))
 
 ; TODO: Need recovery upon failure
 (s/defn write-event! :- EventMixin
@@ -39,7 +47,7 @@
         (let [num-artifacts-added (reduce + (map add-artifact-link event-artifacts))
               delta-artifacts (- (count event-artifacts) num-artifacts-added)]
           (if (== delta-artifacts 0)
-            (create-event result event-artifacts)
+            (make-event-object-to-event result event-artifacts)
             (log/error (str "Failed to add all artifact links: " delta-artifacts))
             ))
         (log/error "Failed to put event"))
@@ -49,7 +57,5 @@
 
 (s/defn get-event :- EventMixin
   [event-id]
-  (let [event-object (jes/get-jarvis-document "events" event-id)
-        redis-key (create-key-event-artifacts event-id)
-        event-artifacts (dar/wcar* (car/smembers redis-key))]
-    (create-event event-object event-artifacts)))
+  (let [event-object (jes/get-jarvis-document "events" event-id)]
+    (make-event-object-to-event event-object)))

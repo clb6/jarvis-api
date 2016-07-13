@@ -15,7 +15,7 @@
   (let [query-criterias (jqh/add-query-criteria-category category)
         query-criterias (jqh/add-query-criteria-weight weight query-criterias)
         query-result (jqh/query-events query-criterias from)]
-    { :items (jqh/get-hits-from-query query-result)
+    { :items (jda/make-event-objects-to-events (jqh/get-hits-from-query query-result))
       :total (jqh/get-total-hits-from-query query-result) }))
 
 (s/defn get-event! :- EventMixin
