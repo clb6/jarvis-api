@@ -210,14 +210,14 @@
            (GET "/:event-id" [:as {:keys [fully-qualified-uri]}]
                 :path-params [event-id :- s/Str]
                 :return Event
-                (if-let [event-object (events/get-event! event-id)]
-                  (ok (jl/expand-event fully-qualified-uri event-object))
+                (if-let [event-mixin (events/get-event! event-id)]
+                  (ok (jl/expand-event fully-qualified-uri event-mixin))
                   (not-found)))
            (POST "/" [:as {:keys [fully-qualified-uri]}]
                  :return Event
                  :body [event-request EventRequest]
-                 (let [event-object (events/post-event! event-request)
-                       event (jl/expand-event fully-qualified-uri event-object)]
+                 (let [event-mixin (events/post-event! event-request)
+                       event (jl/expand-event fully-qualified-uri event-mixin)]
                    (header (created event) "Location"
                            (jl/construct-new-event-uri (:eventId event)
                                                        fully-qualified-uri))))
@@ -225,9 +225,9 @@
                 :path-params [event-id :- s/Str]
                 :return Event
                 :body [event-request EventRequest]
-                (if-let [event-object (events/get-event! event-id)]
-                  (let [event-object (events/update-event! event-object event-request)
-                        event (jl/expand-event fully-qualified-uri event-object)]
+                (if-let [event-mixin (events/get-event! event-id)]
+                  (let [event-mixin (events/update-event! event-mixin event-request)
+                        event (jl/expand-event fully-qualified-uri event-mixin)]
                     (header (ok event) "Location" fully-qualified-uri))
                   (not-found)))
            )

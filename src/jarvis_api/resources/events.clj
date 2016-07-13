@@ -29,13 +29,15 @@
         created-isoformat (or (:created event-request)
                               (util/create-timestamp-isoformat))
         occurred-isoformat (or (:occurred event-request) created-isoformat)
-        event-object (assoc event-request :eventId event-id
+        event-object (dissoc event-request :artifacts)
+        event-object (assoc event-object :eventId event-id
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
     (jda/write-event! event-object (:artifacts event-request))))
 
 
 (s/defn update-event! :- EventMixin
-  [event-object :- EventObject event-request :- EventRequest]
-  (let [updated-event-object (merge event-object (dissoc event-request :artifacts))]
+  [event-mixin :- EventMixin event-request :- EventRequest]
+  (let [event-object (dissoc event-mixin :artifacts :logEntries)
+        updated-event-object (merge event-object (dissoc event-request :artifacts))]
     (jda/write-event! updated-event-object (:artifacts event-request))))
