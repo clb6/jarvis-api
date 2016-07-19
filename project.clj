@@ -11,9 +11,11 @@
                  ; the maintainer that its no longer being maintained and
                  ; recommended exploding-fish
                  [org.bovinegenius/exploding-fish "0.3.4"]
-                 [com.taoensso/carmine "2.13.1"]]
+                 [com.taoensso/carmine "2.13.1"]
+                 [environ "1.0.3"]]
   :ring {:init jarvis-api.handler/init-app
          :handler jarvis-api.handler/app-with-logging}
   :uberjar-name "server.jar"
   :profiles {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]]
-                   :plugins [[lein-ring "0.9.6"]]}})
+                   :plugins [[lein-ring "0.9.6"]]}}
+  :plugins [[lein-environ "1.0.3"]])
