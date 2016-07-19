@@ -3,6 +3,7 @@
             [jarvis-api.config :as config]))
 
 
-(def conn {:pool {} :spec {:host config/jarvis-redis-host :port 6379}})
+(def conn {:pool {} :spec { :host config/jarvis-redis-host
+                            :port config/jarvis-redis-port}})
 (defmacro wcar* [& body] `(car/wcar conn ~@body))
 

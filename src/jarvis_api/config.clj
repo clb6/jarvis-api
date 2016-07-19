@@ -25,3 +25,4 @@
 (def jarvis-elasticsearch-index (versionize-name "jarvis" jarvis-data-version))
 
 (def jarvis-redis-host (or (env :jarvis-redis-host) "redis.jarvis.home"))
+(def jarvis-redis-port (or (read-string (env :jarvis-redis-port)) 6379))
