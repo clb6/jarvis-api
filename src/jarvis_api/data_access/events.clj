@@ -10,7 +10,9 @@
 (defn get-log-entry-ids-by-event-id
   [event-id]
   (let [redis-key (str "event:" event-id ":logs")]
-    (dar/wcar* (car/smembers redis-key)))
+    ; All of these log entry ids are returned as strings, convert back to
+    ; integers
+    (map car/as-int (dar/wcar* (car/smembers redis-key))))
   )
 
 

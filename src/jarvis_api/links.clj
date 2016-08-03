@@ -51,7 +51,8 @@
 
 (defn- construct-log-entry-link
   [fully-qualified-uri rel event-id log-entry-id]
-  { :title log-entry-id :rel rel
+  ; Stringify log-entry-id because it will be an integer
+  { :title (str log-entry-id) :rel rel
     :href (construct-new-log-entry-uri fully-qualified-uri event-id log-entry-id) }
   )
 
