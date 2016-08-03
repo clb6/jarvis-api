@@ -7,7 +7,7 @@
                     (s/optional-key :title) s/Str })
 
 
-(s/defschema LogEntryObject { :id s/Num
+(s/defschema LogEntryObject { :id s/Int
                               :author String
                               :created String
                               :modified s/Str
@@ -18,7 +18,7 @@
                               :todo (s/maybe s/Str)
                               :body String })
 
-(s/defschema LogEntryRequest  { (s/optional-key :id) s/Num
+(s/defschema LogEntryRequest  { (s/optional-key :id) s/Int
                                 :author String
                                 ; Optionally put created here for migration purpose
                                 (s/optional-key :created) s/Str

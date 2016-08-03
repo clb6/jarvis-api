@@ -98,7 +98,7 @@
            :middleware [wrap-request-add-self-link wrap-check-event-id]
            (GET "/:id" [:as {:keys [fully-qualified-uri]}]
                 ; Don't know why BigInteger is not acceptable.
-                :path-params [id :- Long event-id :- s/Str]
+                :path-params [id :- s/Int event-id :- s/Str]
                 :return LogEntry
                 (if-let [log-entry (logs/get-log-entry! id)]
                   (ok (jl/expand-log-entry fully-qualified-uri event-id log-entry))
@@ -120,7 +120,7 @@
                          (internal-server-error)))
                      (wrap-check-tags-exist log-entry-request)))
            (PUT "/:id" [:as {:keys [fully-qualified-uri]}]
-                :path-params [id :- Long event-id :- s/Str]
+                :path-params [id :- s/Int event-id :- s/Str]
                 :return LogEntry
                 :body [log-entry-request LogEntryRequest]
                 (-> (fn [log-entry-request]

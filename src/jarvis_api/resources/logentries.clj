@@ -20,12 +20,11 @@
       :total (jqh/get-total-hits-from-query query-result) }))
 
 (s/defn get-log-entry! :- LogEntryObject
-  [id :- BigInteger]
-  (if-let [log-entry (jda/get-log-entry-object! id)]
-    (update-in log-entry [:id] biginteger)))
+  [id :- s/Int]
+  (jda/get-log-entry-object! id))
 
 (s/defn log-entry-exists?
-  [id :- BigInteger]
+  [id :- s/Int]
   ((comp not nil?) (get-log-entry! id)))
 
 
@@ -58,7 +57,7 @@
   (let [created (tc/now)
         created-isoformat (or (:created log-entry-request)
                               (util/create-timestamp-isoformat created))
-        id (or (:id log-entry-request) (generate-log-id created))
+        id (int (or (:id log-entry-request) (generate-log-id created)))
         log-entry-object (create-log-entry-object log-entry-request id created-isoformat
                                                   event-id)]
     (jda/write-log-entry-object! log-entry-object)))
