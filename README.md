@@ -1,87 +1,67 @@
 # jarvis-api
 
-This is the data API for the Jarvis project.  It is responsible for providing the Jarvis resources:
+jarvis-api is a RESTful data API that is the core service for jarvis.  It is used to manage the jarvis resources:
 
-* Log entries
-* Tags
+* Events - Categorized personal occurrences
+* Log entries - Reflections on events
+* Tags - Concepts, people, places, things used to label log entries
 
-## Pre-requisites
+## Dependencies
 
-### Environment Variables
+Databases:
+
+* [Elasticsearch](https://www.elastic.co/)
+* [Redis](http://redis.io/)
+
+## Environment variables
 
 Variable | Description | Optional? | Dockerfile? | Default
 --- | --- | --- | --- | ---
 `JARVIS_DIR_ROOT` | Top-level directory to data files for Jarvis | N | Y | None
 `JARVIS_DATA_VERSION` | Version of the data resources e.g. 20160528 | N | N | None
 `JARVIS_ELASTICSEARCH` | Elasticsearch connection full URL | Y | N | http://elasticsearch.jarvis.home:9200
-`JARVIS_REDIS` | Redis hostname  | Y | N | redis.jarvis.home
+`JARVIS_REDIS_HOST` | Redis hostname  | Y | N | redis.jarvis.home
+`JARVIS_REDIS_PORT` | Redis port  | Y | N | 6379
 
-### Installation
+## Installation
 
-1. You must run the `bin/install.sh` script in order to create the necessary filesystem directory structure.
-2. Run `docker build -t jarvis-api:<version> .` to create the Docker image.
+Take a look at the jarvis repository for instructions.
 
-## Usage
+## Admin
 
-### Run with Docker
+The jarvis-cli tool has a set of `admin` commands that can be used to help manage jarvis-api.
 
-You must run the databases first.
+### Backing up
 
-#### Run Elasticsearch
-
-```
-docker run -d -v /opt/jarvis/Elasticsearch/:/usr/share/elasticsearch/data -p 9200:9200 --name jarvis-elasticsearch elasticsearch
-```
-
-**Note**: Apparently the last `/` makes a difference.  Docker Elasticsearch when it mounts the volume changes the folder permission to `avahi-autoipd:lpadmin`.  Without the `/` other directories also change permissions.
-
-#### Run Redis
+jarvis-api data can be backed up by taking snapshots of the critical data directory which by default is `/opt/jarvis`.  Use the jarvis-cli tool to take local snapshots.  Run the following for more details:
 
 ```
-docker run -d -v /opt/jarvis/Redis/:/data -p 6379:6379 --name jarvis-redis redis redis-server --appendonly yes
+jarvis admin backup --help
 ```
 
-#### Run `jarvis-api`
-
-Now run the jarvis-api linking it to the Elasticsearch container and the Redis container:
+jarvis-cli also has the ability to restore from an existing snapshot:
 
 ```
-docker run -d -v /opt/jarvis:/opt/jarvis -p 3000:3000 -e JARVIS_DATA_VERSION=20160628 --link jarvis-elasticsearch:elasticsearch.jarvis.home --link jarvis-redis:redis.jarvis.home --name jarvis-api-container jarvis-api:<version>
+jarvis admin restore --help
 ```
 
-### Development
+## Development
 
-#### Run the application locally
+### Run the application locally
 
 `lein ring server`
 
-#### Packaging and running as standalone jar
+### Packaging and running as standalone jar
 
 ```
 lein do clean, ring uberjar
 java -jar target/server.jar
 ```
 
-#### Packaging as war
+### Packaging as war
 
 `lein ring uberwar`
 
-## Snapshots
+### Versioning
 
-### Backing up
-
-Snapshots of the jarvis-api can be made using the `bin/snapshot_backup.sh` script.  Run:
-
-```
-sudo bin/snapshot_backup.sh
-```
-
-A new snapshot tarball will be created in the `/opt/jarvis_snapshots` directory.
-
-### Restoring
-
-Snapshots can be used to update jarvis-api by using the `bin/snapshot_restore.sh` script.  Run:
-
-```
-sudo bin/snapshot_restore.sh <path of snapshot tarball>
-```
+[SemVer](http://semver.org/) is used.
