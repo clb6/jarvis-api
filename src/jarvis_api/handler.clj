@@ -4,8 +4,8 @@
             [ring.util.http-response :refer :all]
             [schema.core :as s]
             [ring.middleware.logger :as log]
-            [clj-logging-config.log4j :refer [set-loggers!]]
             [org.bovinegenius.exploding-fish :as ef]
+            [taoensso.timbre :as timbre :refer [set-level! info]]
             [jarvis-api.schemas :refer [LogEntryRequest LogEntry
                                         Tag TagRequest DataSummary Link
                                         Event EventRequest event-categories]]
@@ -238,4 +238,6 @@
 
 (defn init-app
   []
-  (set-loggers! :root { :level :info }))
+  (set-level! :info)
+  (info "YO")
+  )
