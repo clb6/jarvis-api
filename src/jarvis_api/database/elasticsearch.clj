@@ -1,8 +1,10 @@
 (ns jarvis-api.database.elasticsearch
   (:require [clojurewerkz.elastisch.rest  :as esr]
             [clojurewerkz.elastisch.rest.document :as esd]
+            [clojurewerkz.elastisch.rest.index :as esi]
             [clojurewerkz.elastisch.rest.response :refer [aggregations-from]]
             [clojurewerkz.elastisch.query :as esq]
+            [taoensso.timbre :as timbre :refer [info error]]
             [jarvis-api.config :as config]))
 
 ; Had to force the document-id to be a string because Elasticsearch complains
@@ -93,3 +95,40 @@
                            :search_type "count")]
     (aggregations-from result)))
 
+
+(defn initialize!
+  "Initialize Elasticsearch for Jarvis
+
+  Mappings is a seq of vectors where each vector is more of tuple in the form of:
+  
+    [type-name properties-json]
+  
+  where type-name is a string and properties-json is a hashmap"
+  [mappings]
+  (let [conn (esr/connect config/jarvis-elasticsearch-uri)
+        index-name config/jarvis-elasticsearch-index
+        type-exists? (partial esi/type-exists? conn index-name)
+        update-mapping (partial esi/update-mapping conn index-name)
+        ]
+    ; Make sure index exists
+    (if (not (esi/exists? conn index-name))
+      (do
+        (esi/create conn index-name)
+        (info "Elasticsearch created index: " index-name))
+      )
+
+    ; Make sure all mappings exist
+    (letfn [(ensure-mapping [mapping]
+              (let [type-name (first mapping)
+                    type-properties (second mapping)]
+                (if (not (type-exists? type-name))
+                  (do
+                    (if (:acknowledged
+                          (update-mapping type-name { :mapping type-properties }))
+                      (info "Elasticsearch created type: " type-name)
+                      (error "Elasticsearch failed to create type: " type-name)
+                      ))
+                  )))]
+      (dorun (map ensure-mapping mappings))
+      )
+    ))

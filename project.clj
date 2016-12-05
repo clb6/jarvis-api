@@ -13,7 +13,9 @@
                  [com.taoensso/carmine "2.15.0"]
                  [com.taoensso/timbre "4.7.4"]
                  [com.fzakaria/slf4j-timbre "0.3.2"]
-                 [environ "1.0.3"]]
+                 [environ "1.0.3"]
+                 [cheshire "5.6.3"]
+                 ]
   :ring {:init jarvis-api.handler/init-app
          :handler jarvis-api.handler/app-with-logging}
   :uberjar-name "server.jar"

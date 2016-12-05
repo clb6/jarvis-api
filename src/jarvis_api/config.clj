@@ -3,6 +3,11 @@
             [environ.core :refer [env]]))
 
 
+; REVIEW: Should this configuration be in an external file? There doesn't seem to
+; be a way of passing in the configuration file through ring or compojure-api.
+; Ring applications take in args like `port` so there must be a way but not
+; documented.
+
 (def jarvis-data-version (env :jarvis-data-version))
 
 (defn- versionize-name
@@ -16,6 +21,8 @@
 (def jarvis-images-directory (cs/join "/" [jarvis-root-directory "Images"]))
 (def jarvis-tag-directory (cs/join "/" [jarvis-root-directory
                                         (versionize-name "Tags" jarvis-data-version)]))
+(def elasticsearch-mappings-directory (cs/join "/" [jarvis-root-directory
+                                                    "Elasticsearch/mappings"]))
 
 (def jarvis-tag-version "0.3.0")
 (def jarvis-log-entry-version "0.8.0")

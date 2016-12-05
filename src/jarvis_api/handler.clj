@@ -6,6 +6,7 @@
             [ring.middleware.logger :as log]
             [org.bovinegenius.exploding-fish :as ef]
             [taoensso.timbre :as timbre :refer [set-level! info]]
+            [cheshire.core :refer [parse-string]]
             [jarvis-api.schemas :refer [LogEntryRequest LogEntry
                                         Tag TagRequest DataSummary Link
                                         Event EventRequest event-categories]]
@@ -13,7 +14,10 @@
             [jarvis-api.resources.tags :as tags]
             [jarvis-api.resources.logentries :as logs]
             [jarvis-api.resources.events :as events]
-            [jarvis-api.resources.datasummary :as dsummary]))
+            [jarvis-api.resources.datasummary :as dsummary]
+            [jarvis-api.database.elasticsearch :as jes]
+            [jarvis-api.config :as config]
+            ))
 
 
 (defn- find-missing-tags
@@ -239,5 +243,19 @@
 (defn init-app
   []
   (set-level! :info)
-  (info "YO")
+
+  (letfn [(parse-mapping [mapping-file]
+            (let [type-name (second (re-find #"mapping_(\w+)\.json"
+                                             (.getName mapping-file)))
+                  type-properties (parse-string (slurp mapping-file) true)]
+              [type-name type-properties]))]
+
+    (let [mapping-files (file-seq (clojure.java.io/file
+                                    config/elasticsearch-mappings-directory))
+          mapping-files (filter #(.isFile %) mapping-files)]
+
+      (jes/initialize! (map parse-mapping mapping-files))
+    ))
+
+  (info "Done initializing application")
   )
