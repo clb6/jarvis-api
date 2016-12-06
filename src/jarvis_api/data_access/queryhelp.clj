@@ -12,10 +12,10 @@
 (def add-query-criteria-category (partial jes/add-query-criteria-match :category))
 (def add-query-criteria-weight (partial jes/add-query-criteria-range-gte :weight))
 
-(def query-tags (partial jes/query-jarvis-documents "tags" { "name" "asc" }))
-(def query-log-entries (partial jes/query-jarvis-documents "logentries"
+(def query-tags (partial jes/query-documents! "tags" { "name" "asc" }))
+(def query-log-entries (partial jes/query-documents! "logentries"
                                { "created" "desc" }))
-(def query-events (partial jes/query-jarvis-documents "events" { "occurred" "desc" }))
+(def query-events (partial jes/query-documents! "events" { "occurred" "desc" }))
 
 (defn get-hits-from-query
   [query-result]

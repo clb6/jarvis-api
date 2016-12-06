@@ -45,15 +45,26 @@
     (:count (esd/count conn config/jarvis-elasticsearch-index document-type))))
 
 
-(defn add-query-criteria
-  "Helper method to build Elasticsearch query request where this method adds a
-  query to a list of queries that is intended for a bool compound query."
+(defn- add-query-criteria
+  "Build up query criteria
+
+  This a higher order to be used in more specific cases to build up a complex
+  query criteria used to pass into an Elasticsearch query request.  The output 
+  is a list of query criterias which can then be passed into subsequent calls to
+  the same function.  You are creating a bool compound query.
+  
+  The signature of the query-criteria-constructor function is:
+    
+    some-func [field value] -> Elasticsearch query criteria
+  "
   ([query-criteria-constructor field value]
-  (add-query-criteria query-criteria-constructor field value []))
+   (add-query-criteria query-criteria-constructor field value []))
+
   ([query-criteria-constructor field value query-array]
    (if (nil? value)
      query-array
-     (conj query-array (query-criteria-constructor field value)))))
+     (conj query-array (query-criteria-constructor field value))))
+  )
 
 ; NOTE: Went from "wildcard" to "query-string" because of issue with case
 ; sensitivity of the "wildcard"
@@ -71,19 +82,25 @@
                                            (fn[field value]
                                              (esq/range field { "gte"  value }))))
 
-(defn query-jarvis-documents
-  "Constrained Elasticsearch querying.
+(defn query-documents!
+  "Constrained Elasticsearch query
 
-  Returns [total hits]
+  Returns [hits total]
 
   TODO: How to enable a diverse set of querying? Right now querying is hardcoded
   to be `bool` and `must`."
-  [document-type sort-request query-criterias from]
-  (let [conn (esr/connect config/jarvis-elasticsearch-uri)
-        query-request (esq/bool { :must query-criterias })
-        result (esd/search conn config/jarvis-elasticsearch-index document-type
-                           :query query-request :sort sort-request :from from)]
-    [(map :_source (:hits (:hits result))) (get-in result [:hits :total])]))
+  ([{:keys [uri index-name]} document-type sort-criteria query-criterias from]
+   (let [conn (esr/connect uri)
+         query-request (esq/bool { :must query-criterias })
+         result (esd/search conn index-name document-type
+                            :query query-request :sort sort-criteria :from from)]
+     [(map :_source (:hits (:hits result))) (get-in result [:hits :total])]))
+
+  ([document-type sort-criteria query-criterias from]
+   (query-documents! { :uri config/jarvis-elasticsearch-uri
+                      :index-name config/jarvis-elasticsearch-index }
+                    document-type sort-criteria query-criterias from))
+  )
 
 
 (defn aggregate-jarvis-documents
