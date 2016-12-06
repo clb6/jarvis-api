@@ -200,9 +200,9 @@
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
                 :query-params [{category :- event-categories nil} {weight :- Long 0}
-                               {from :- Long 0}]
+                               {searchterm :- s/Str nil} {from :- Long 0}]
                 :return { :items [Event], :total Long, :links [Link] }
-                (let [query-result (events/query-events category weight from)
+                (let [query-result (events/query-events category weight searchterm from)
                       response (assoc query-result :links
                                       (jl/generate-query-links (:total query-result)
                                                                from

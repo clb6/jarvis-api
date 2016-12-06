@@ -11,9 +11,10 @@
 (defn query-events
   "Returns { :items [EventObjects] :total Long } if there are no hits then :items is
   an empty list"
-  [category weight from]
+  [category weight searchterm from]
   (let [query-criterias (jqh/add-query-criteria-category category)
         query-criterias (jqh/add-query-criteria-weight weight query-criterias)
+        query-criterias (jqh/add-query-criteria-description searchterm query-criterias)
         query-result (jqh/query-events query-criterias from)]
     { :items (jda/make-event-objects-to-events (jqh/get-hits-from-query query-result))
       :total (jqh/get-total-hits-from-query query-result) }))
