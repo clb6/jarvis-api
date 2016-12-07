@@ -199,8 +199,10 @@
            :summary "API to handle events"
            :middleware [wrap-request-add-self-link]
            (GET "/" [:as {:keys [fully-qualified-uri]}]
-                :query-params [{category :- event-categories nil} {weight :- Long 0}
-                               {searchterm :- s/Str nil} {from :- Long 0}]
+                :query-params [{category :- (describe event-categories "Filter by specified event category") nil}
+                               {weight :- (describe Long "Filter out all events that have a numerical weight less than this") 0}
+                               {searchterm :- (describe s/Str "Query descriptions using this single search term") nil }
+                               {from :- (describe Long "Events index used for pagination") 0}]
                 :return { :items [Event], :total Long, :links [Link] }
                 (let [query-result (events/query-events category weight searchterm from)
                       response (assoc query-result :links
