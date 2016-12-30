@@ -204,7 +204,7 @@
                                {searchterm :- (describe s/Str "Query descriptions using this single search term") nil }
                                {from :- (describe Long "Events index used for pagination") 0}]
                 :return { :items [Event], :total Long, :links [Link] }
-                (let [query-result (events/query-events category weight searchterm from)
+                (let [query-result (events/query-events! category weight searchterm from)
                       response (assoc query-result :links
                                       (jl/generate-query-links (:total query-result)
                                                                from

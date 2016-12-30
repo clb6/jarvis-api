@@ -5,23 +5,37 @@
                                         EventMixin]]
             [jarvis-api.data_access.events :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
+            [jarvis-api.database.redis :as jredis]
+            [jarvis-api.database.elasticsearch :as jelastic]
             [jarvis-api.util :as util]))
 
 
-(defn query-events
+(defn query-events!
   "Returns { :items [EventObjects] :total Long } if there are no hits then :items is
   an empty list"
   [category weight searchterm from]
   (let [query-criterias (jqh/add-query-criteria-category category)
         query-criterias (jqh/add-query-criteria-weight weight query-criterias)
         query-criterias (jqh/add-query-criteria-description searchterm query-criterias)
-        query-result (jqh/query-events query-criterias from)]
-    { :items (jda/make-event-objects-to-events (jqh/get-hits-from-query query-result))
+        query-result (jqh/query-events query-criterias from)
+        make-events (partial jda/make-events-from-objects jredis/get-log-entry-ids
+                             jredis/get-artifacts)
+        ]
+    { :items (make-events (jqh/get-hits-from-query query-result))
       :total (jqh/get-total-hits-from-query query-result) }))
+
+
+(def put-event-object! (partial jelastic/put-jarvis-document "events"))
+(def make-event! (partial jda/make-event-from-object jredis/get-log-entry-ids
+                         jredis/get-artifacts))
+(def write-event! (partial jda/write-event put-event-object! jredis/update-artifacts
+                           make-event!))
+
 
 (s/defn get-event! :- EventMixin
   [event-id :- String]
-  (jda/get-event event-id))
+  (let [get-event-object (partial jelastic/get-jarvis-document "events")]
+    (jda/get-event get-event-object make-event! event-id)))
 
 
 (s/defn post-event! :- EventMixin
@@ -34,11 +48,13 @@
         event-object (assoc event-object :eventId event-id
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
-    (jda/write-event! event-object (:artifacts event-request))))
+
+    (write-event! event-object (:artifacts event-request))))
 
 
 (s/defn update-event! :- EventMixin
   [event-mixin :- EventMixin event-request :- EventRequest]
   (let [event-object (dissoc event-mixin :artifacts :logEntries)
         updated-event-object (merge event-object (dissoc event-request :artifacts))]
-    (jda/write-event! updated-event-object (:artifacts event-request))))
+
+    (write-event! updated-event-object (:artifacts event-request))))

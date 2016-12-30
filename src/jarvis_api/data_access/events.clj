@@ -1,98 +1,74 @@
 (ns jarvis-api.data_access.events
-  (:require [clojure.tools.logging :as log]
-            [schema.core :as s]
+  (:require [schema.core :as s]
             [jarvis-api.schemas :refer [EventObject EventArtifact EventMixin]]
             [taoensso.carmine :as car]
-            [jarvis-api.database.redis :as dar]
-            [jarvis-api.database.elasticsearch :as jes]))
+            [taoensso.timbre :as timbre :refer [warn error]]
+            ))
 
 
-(defn get-log-entry-ids-by-event-id
-  [event-id]
-  (let [redis-key (str "event:" event-id ":logs")]
-    ; All of these log entry ids are returned as strings, convert back to
-    ; integers
-    (map car/as-int (dar/wcar* (car/smembers redis-key))))
-  )
+(s/defn make-event-from-object :- EventMixin
+  [get-log-entry-ids-func get-artifacts-func event-object :- EventObject]
+  (let [event-id (:eventId event-object)
+        artifacts (get-artifacts-func event-id)
+        log-entries (get-log-entry-ids-func event-id)]
+    (assoc event-object :artifacts artifacts :logEntries log-entries)))
 
-
-(defn- create-key-event-artifacts
-  [event-id]
-  (str "event:" event-id ":artifacts"))
-
-(defn- make-event-object-to-event
-  ([event-object event-artifacts]
-   (let [log-entries (get-log-entry-ids-by-event-id (:eventId event-object))]
-     (assoc event-object :artifacts event-artifacts :logEntries log-entries)))
-  ([event-object]
-   (let [redis-key (create-key-event-artifacts (:eventId event-object))
-         event-artifacts (dar/wcar* (car/smembers redis-key))]
-     (make-event-object-to-event event-object event-artifacts)))
-  )
-
-(s/defn make-event-objects-to-events :- [EventMixin]
-  [event-objects :- [EventObject]]
-  (map make-event-object-to-event event-objects))
+(s/defn make-events-from-objects :- [EventMixin]
+  [get-log-entry-ids-func get-artifacts-func event-objects :- [EventObject]]
+  (let [make-event (partial make-event-from-object get-log-entry-ids-func
+                            get-artifacts-func)]
+    (map make-event event-objects)))
 
 
 (s/defn get-event :- EventMixin
-  [event-id]
-  (let [event-object (jes/get-jarvis-document "events" event-id)]
-    (make-event-object-to-event event-object)))
+  [get-event-object-func make-event-func event-id :- String]
+  (let [event-object (get-event-object-func event-id)]
+    (make-event-func event-object)))
 
 
-(defn- just-write-event-mixin!
-  [event-object event-artifacts]
-  ;; This method is used to just simply write the event mixin components throwing
-  ;; caution to the wind.
-  ;; 
-  ;; 1. Write the event object
-  ;; 2. Verify that something got written
-  ;; 3. Replace the event artifacts
-  ;; 4. Verify by counting the artifacts written
-  ;;
-  ;; Returns an EventMixin if all the simple checks pass else returns nil
+(s/defn write-event :- EventMixin
+  "High order funciton to write an event
 
-  (let [event-id (:eventId event-object)
-        redis-key (create-key-event-artifacts event-id)]
-    (if-let [result (jes/put-jarvis-document "events" event-id event-object)]
-      ; Assuming Carmine will convert complex data structures into byte strings
-      ; using nippy.
-      ; In order to handle event artifact updates, the existing ones are wiped
-      ; away first before adding the new ones.
-      (letfn [(add-event-artifact [event-artifact]
-                (dar/wcar* (car/sadd redis-key event-artifact)))
-              (replace-event-artifacts []
-                (dar/wcar* (car/del redis-key))
-                (reduce + (map add-event-artifact event-artifacts)))]
-        ; Verify that the proper number of artifacts got added
-        (let [num-artifacts-added (replace-event-artifacts)
-              delta-artifacts (- (count event-artifacts) num-artifacts-added)]
-          (if (== delta-artifacts 0)
-            (make-event-object-to-event result event-artifacts)
-            (log/error (str "Failed to add all artifacts: " delta-artifacts))
-            )))
-      (log/error "Failed to put event")
-      ))
-  )
+  Event object and associated artifacts are written together in a loose
+  transaction. If a previous version of the event is provided, that is used to
+  rollback. Upon a successful write, the new event is returned."
+  ([put-event-object-func update-artifacts-func make-event-func
+    event-object :- EventObject artifacts :- [EventArtifact] event-prev :- EventMixin]
+    (letfn [(handle-error []
+              (if (nil? event-prev)
+                (error "Failed to write event")
+                (do
+                  (warn "Failed to write event. Attempting to rollback")
+                  (write-event put-event-object-func
+                               update-artifacts-func
+                               make-event-func
+                               (dissoc event-prev :logEntries :artifacts)
+                               (:artifacts event-prev) nil)
+                  ; Do not want to give the false impression that the write went
+                  ; smoothly for a rollback
+                  nil)
+                )
+              )]
 
-(s/defn write-event! :- EventMixin
-  [event-object :- EventObject event-artifacts :- [EventArtifact]]
-  (let [event-mixin-prev (get-event (:eventId event-object))
-        event-object-prev (dissoc event-mixin-prev :logEntries :artifacts)
-        event-artifacts-prev (:artifacts event-mixin-prev)]
-    (letfn [(rollback []
-              (if-let [result (just-write-event-mixin! event-object-prev
-                                                       event-artifacts-prev)]
-                (log/info "Rollback successful")
-                (log/error "Rollback failed")))]
       (try
-        (if-let [event-mixin (just-write-event-mixin! event-object event-artifacts)]
-          event-mixin
+        (let [event-id (:eventId event-object)
+              event-object-added (put-event-object-func event-id event-object)
+              num-artifacts-added (update-artifacts-func event-id artifacts)
+              artifacts-replace-failed? (not= (count artifacts) num-artifacts-added)
+              ]
 
-          (if (nil? event-mixin-prev)
-            (log/info "No previous event so nothing to rollback")
-            (rollback)))
+          ; Writing event object and artifacts is one transaction
+          (if (or (nil? event-object-added) artifacts-replace-failed?)
+            (handle-error)
+            (make-event-func event-object-added)))
         (catch Exception e
-               (rollback))
-        ))))
+               (error "Unexpected exception: " (.getMessage e))
+               (handle-error))
+        )
+      ))
+
+  ([put-event-object-func update-artifacts-func make-event-func
+    event-object :- EventObject artifacts :- [EventArtifact]]
+   (write-event put-event-object-func update-artifacts-func make-event-func
+                event-object artifacts nil))
+  )
