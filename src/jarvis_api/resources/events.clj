@@ -37,6 +37,11 @@
     (jda/get-event get-event-object make-event! event-id)))
 
 
+(defn- write-event-with-rollback!
+  [event-object artifacts]
+  (let [event-prev (get-event! (:eventId event-object))]
+    (write-event! event-object artifacts event-prev)))
+
 (s/defn post-event! :- EventMixin
   [event-request :- EventRequest]
   (let [event-id (or (:eventId event-request) (util/generate-uuid))
@@ -48,7 +53,7 @@
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
 
-    (write-event! event-object (:artifacts event-request))))
+    (write-event-with-rollback! event-object (:artifacts event-request))))
 
 
 (s/defn update-event! :- EventMixin
@@ -56,4 +61,4 @@
   (let [event-object (dissoc event-mixin :artifacts :logEntries)
         updated-event-object (merge event-object (dissoc event-request :artifacts))]
 
-    (write-event! updated-event-object (:artifacts event-request))))
+    (write-event-with-rollback! updated-event-object (:artifacts event-request))))

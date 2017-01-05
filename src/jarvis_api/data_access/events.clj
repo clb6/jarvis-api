@@ -34,7 +34,10 @@
 
   Event object and associated artifacts are written together in a loose
   transaction. If a previous version of the event is provided, that is used to
-  rollback. Upon a successful write, the new event is returned."
+  rollback. Upon a successful write, the new event is returned.
+
+  There is no schema validation because the expectation is that the caller has
+  done this."
   ([put-event-object-func update-artifacts-func make-event-func
     event-object :- EventObject artifacts :- [EventArtifact] event-prev :- EventMixin]
     (letfn [(handle-error []
