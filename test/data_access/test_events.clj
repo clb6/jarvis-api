@@ -29,7 +29,10 @@
               artifacts)
             ]
       (is (= (jde/make-event-from-object get-log-entry-ids get-artifacts event-object)
-             expected-event))))
+             expected-event))
+      (is (= (jde/make-event-from-object get-log-entry-ids get-artifacts nil)
+             nil))
+      ))
   )
 
 (deftest test-write-event

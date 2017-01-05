@@ -10,6 +10,13 @@
             [jarvis-api.util :as util]))
 
 
+(def put-event-object! (partial jelastic/put-jarvis-document "events"))
+(def make-event! (partial jda/make-event-from-object jredis/get-log-entry-ids
+                         jredis/get-artifacts))
+(def write-event! (partial jda/write-event put-event-object! jredis/update-artifacts
+                           make-event!))
+
+
 (defn query-events!
   "Returns { :items [EventObjects] :total Long } if there are no hits then :items is
   an empty list"
@@ -18,18 +25,10 @@
         query-criterias (jqh/add-query-criteria-weight weight query-criterias)
         query-criterias (jqh/add-query-criteria-description searchterm query-criterias)
         query-result (jqh/query-events query-criterias from)
-        make-events (partial jda/make-events-from-objects jredis/get-log-entry-ids
-                             jredis/get-artifacts)
+        make-events! (partial map make-event!)
         ]
-    { :items (make-events (jqh/get-hits-from-query query-result))
+    { :items (make-events! (jqh/get-hits-from-query query-result))
       :total (jqh/get-total-hits-from-query query-result) }))
-
-
-(def put-event-object! (partial jelastic/put-jarvis-document "events"))
-(def make-event! (partial jda/make-event-from-object jredis/get-log-entry-ids
-                         jredis/get-artifacts))
-(def write-event! (partial jda/write-event put-event-object! jredis/update-artifacts
-                           make-event!))
 
 
 (s/defn get-event! :- EventMixin

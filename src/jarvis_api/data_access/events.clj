@@ -7,17 +7,20 @@
 
 
 (s/defn make-event-from-object :- EventMixin
-  [get-log-entry-ids-func get-artifacts-func event-object :- EventObject]
-  (let [event-id (:eventId event-object)
-        artifacts (get-artifacts-func event-id)
-        log-entries (get-log-entry-ids-func event-id)]
-    (assoc event-object :artifacts artifacts :logEntries log-entries)))
+  "Create event from event object
 
-(s/defn make-events-from-objects :- [EventMixin]
-  [get-log-entry-ids-func get-artifacts-func event-objects :- [EventObject]]
-  (let [make-event (partial make-event-from-object get-log-entry-ids-func
-                            get-artifacts-func)]
-    (map make-event event-objects)))
+  Create the event from the respective event object. If event object is
+  nil then nil is returned."
+  [get-log-entry-ids-func get-artifacts-func event-object :- EventObject]
+  (if (not (nil? event-object))
+    (let [event-id (:eventId event-object)
+          artifacts (get-artifacts-func event-id)
+          log-entries (get-log-entry-ids-func event-id)]
+      ; Decided not to validate this value because this method is used
+      ; for reads. Should pass back the bad events so they can be examined
+      ; at higher levels.
+      (assoc event-object :artifacts artifacts :logEntries log-entries)))
+  )
 
 
 (s/defn get-event :- EventMixin
