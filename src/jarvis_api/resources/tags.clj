@@ -19,23 +19,6 @@
       :total (jqh/get-total-hits-from-query query-result) }))
 
 
-(defn- fetch-tag-files!
-  "Returns a list of all available tags as Java Files"
-  []
-  (filter #(.isFile %1) (file-seq (clojure.java.io/file config/jarvis-tag-directory))))
-
-(defn- filter-tag-files-by-tag-name
-  "Function extracts the Java File with a matching name which means matches by a
-  case-insensitive version of the file name. Returns only the first match."
-  [tag-name tag-files]
-  (let [tag-name (cs/lower-case tag-name)]
-    (letfn [(tag-file-to-name [tag-file]
-              ((comp cs/lower-case
-                     #(clojure.string/replace %1 #".md" ""))
-               (.getName tag-file)))]
-    (first (filter #(= tag-name (tag-file-to-name %1)) tag-files)))))
-
-
 (s/defn get-tag! :- TagObject
   "Returns web response where it will return a tag object if a tag is found"
   [tag-name :- String]
