@@ -4,8 +4,9 @@
             [jarvis-api.schemas :refer [TagObject TagRequest]]
             [jarvis-api.config :as config]
             [jarvis-api.markdown_filer :as mf]
-            [jarvis-api.data_access.common :as jda]
+            [jarvis-api.data-accessing :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
+            [jarvis-api.database.elasticsearch :as jes]
             [jarvis-api.util :as util]
             [jarvis-api.links :as jl]))
 
@@ -19,57 +20,76 @@
       :total (jqh/get-total-hits-from-query query-result) }))
 
 
+(def get-tag-elasticsearch! (partial jes/get-jarvis-document "tags"))
+(def put-tag-elasticsearch! (partial jes/put-jarvis-document "tags"))
+(def delete-tag-elasticsearch! (partial jes/delete-jarvis-document "tags"))
+
+(defn get-tag-id
+  [tag-object]
+  (cs/lower-case (:name tag-object)))
+
+(def rollback-tag! (jda/create-rollback-func put-tag-elasticsearch!
+                                             delete-tag-elasticsearch!))
+(def write-tag! (jda/create-write-func put-tag-elasticsearch!))
+(def write-tag-reliably! (jda/create-write-reliably-func get-tag-elasticsearch!
+                                                         write-tag!
+                                                         rollback-tag!
+                                                         get-tag-id))
+
+
 (s/defn get-tag! :- TagObject
   "Returns web response where it will return a tag object if a tag is found"
   [tag-name :- String]
-  (jda/get-jarvis-document! "tags" (cs/lower-case tag-name)))
+  (get-tag-elasticsearch! (cs/lower-case tag-name))
+  )
+
 
 (defn tag-exists?
   "Case-insensitive check of whether a tag already exists"
   [tag-name]
-  ((comp not nil?) (get-tag! tag-name)))
+  ((comp not nil?) (get-tag! tag-name))
+  )
+
 
 (s/defn filter-tag-names-missing :- [s/Str]
   "Given a list of tag names, returns the list of tag names that are missing"
   [tag-names :- [s/Str]]
-  (filter #(not (tag-exists? %1)) tag-names))
+  (filter #(not (tag-exists? %1)) tag-names)
+  )
 
 
-(def metadata-keys-tags (list :name :author :created :modified :version :tags))
-(def create-tag-file (partial mf/create-file metadata-keys-tags))
-
-(defn- write-tag-object!
-  [tag-name tag-object]
-  (let [tag-file-path (format "%s/%s.md" config/jarvis-tag-directory tag-name)]
-    (jda/write-jarvis-document! "tags" tag-file-path create-tag-file
-                                (cs/lower-case tag-name) tag-object)))
-
-(defn- create-tag-object
+(s/defn make-tag-object :- TagObject
   "Create Tag from TagRequest"
-  [tag-request]
+  [tag-request :- TagRequest]
   (let [modified-isoformat (util/create-timestamp-isoformat)
         ; Allow created timestamp to be passed-in. The use case is migrations.
         created-isoformat (if (contains? tag-request :created)
                             (:created tag-request)
                             modified-isoformat)]
     (assoc tag-request :created created-isoformat :modified modified-isoformat
-           :version config/jarvis-tag-version)))
+           :version config/jarvis-tag-version))
+  )
 
 
 (s/defn valid-tag?
   [tag-name :- s/Str tag-request :- TagRequest]
-  (= (cs/lower-case tag-name) (cs/lower-case (:name tag-request))))
+  (= (cs/lower-case tag-name) (cs/lower-case (:name tag-request)))
+  )
 
 
 (s/defn post-tag! :- TagObject
   "Takes a TagRequest converts to a Tag which is written to the filesystem in the
   tag file format."
   [tag-request :- TagRequest]
-  (write-tag-object! (:name tag-request) (create-tag-object tag-request)))
+  (let [tag-object (make-tag-object tag-request)]
+    (write-tag-reliably! tag-object))
+  )
 
 
 (s/defn update-tag! :- TagObject
   [tag-object :- TagObject tag-request :- TagRequest]
   (let [updated-tag-object (merge tag-object tag-request)
-        updated-tag-object (assoc updated-tag-object :modified (util/create-timestamp-isoformat))]
-    (write-tag-object! (:name updated-tag-object) updated-tag-object)))
+        updated-tag-object (assoc updated-tag-object
+                                  :modified (util/create-timestamp-isoformat))]
+    (write-tag-reliably! updated-tag-object))
+  )
