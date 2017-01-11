@@ -1,4 +1,4 @@
-(ns database.test-elasticsearch
+(ns jarvis-api.database.test.elasticsearch
   (:use [clojure test])
   (:require [jarvis-api.database.elasticsearch :as jes]
             )

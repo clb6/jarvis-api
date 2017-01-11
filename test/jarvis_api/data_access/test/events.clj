@@ -1,4 +1,4 @@
-(ns data-access.test-events
+(ns jarvis-api.data-access.test.events
   (:use [clojure test])
   (:require [jarvis-api.data_access.events :as jde]
             )
