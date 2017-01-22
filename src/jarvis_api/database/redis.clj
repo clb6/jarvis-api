@@ -1,5 +1,6 @@
 (ns jarvis-api.database.redis
   (:require [taoensso.carmine :as car :refer (wcar)]
+            [taoensso.timbre :as timbre :refer [warn]]
             [jarvis-api.config :as config]))
 
 
@@ -38,4 +39,29 @@
     (wcar* (car/del redis-key))
     (reduce + (map #(wcar* (car/sadd redis-key %)) artifacts))
     )
+  )
+
+; For log entries
+
+(defn- update-event-relations!
+  [redis-operation-func log-entry-object]
+  (if-let [event-id (:event log-entry-object)]
+    (let [redis-key (str "event:" event-id ":logs")]
+      (wcar* (redis-operation-func redis-key (:id log-entry-object))))
+    (warn (str "No event set for " (:id log-entry-object)))
+    ))
+
+(defn add-logentry-to-event!
+  [logentry-id logentry-object]
+  (let [add-func (partial update-event-relations! car/sadd)
+        result (add-func logentry-object)]
+    (if (> result 0)
+      logentry-object))
+  )
+
+(defn remove-logentry-from-event!
+  [logentry-id logentry-object]
+  (let [remove-func (partial update-event-relations! car/srem)
+        result (remove-func logentry-object)]
+    (> result 0))
   )
