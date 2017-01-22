@@ -3,6 +3,73 @@
             [taoensso.timbre :as timbre :refer [warn error]]
             ))
 
+; prev exists:
+; put fails..nothing, nothing
+; add fails..put prev, nothing
+; remove fails..put prev, nothing
+;
+; first:
+; put fails..nothing, nothing
+; add fails..delete, nothing
+; remove fials..delete, nothing
+
+
+(defn create-write-func
+  "Creates function to write resource object
+
+  High order function that creates a function that tries to write resource
+  object.
+
+  Args:
+    put-funcs: Arbitrary list of fn[resource-id resource-object]
+
+  Returns:
+    fn[resource-id resource-object] that returns nil or resource-object"
+  [& put-funcs]
+  (fn [resource-id resource-object]
+    (letfn [(wrap-put-func [put-func]
+              (fn [resource-id resource-object]
+                (if resource-object
+                  (put-func resource-id resource-object)))
+              )]
+      (try
+        (let [wrapped-put-funcs (map wrap-put-func put-funcs)
+              wrapped-put-funcs (map #(partial % resource-id) wrapped-put-funcs)
+              result ((apply comp wrapped-put-funcs) resource-object)
+              ]
+          (or result (error "Failed to write resource object"))
+          )
+        (catch Exception e
+          (error "Unexpected exception: " (.getMessage e)))
+        )))
+  )
+
+(defn create-remove-func
+  "Creates function to write resource object
+
+  High order function that creates a function that tries to write resource
+  object.
+
+  Args:
+    put-funcs: Arbitrary list of fn[resource-id resource-object]
+
+  Returns:
+    fn[resource-id resource-object] that returns nil or resource-object"
+  [& delete-funcs]
+  (fn [resource-id resource-object]
+    (try
+      (let [result (map #(% resource-id resource-object) delete-funcs)]
+        (if (every? true? result)
+          true
+          (do
+            (error "Failed to delete resource object")
+            false)
+          ))
+      (catch Exception e
+        (error "Unexpected exception: " (.getMessage e)))
+      ))
+  )
+
 
 (defn create-rollback-func
   "Creates rollback function
@@ -16,38 +83,15 @@
 
   Returns:
     fn[resource-id resource-object] that returns nil or true"
-  [put-func delete-func]
+  [write-func remove-func]
   (fn [resource-id resource-object-prev]
     (try
       (if resource-object-prev
-        (put-func resource-id resource-object-prev)
-        (delete-func resource-id)
+        (write-func resource-id resource-object-prev)
+        (remove-func resource-id resource-object-prev)
         )
       (catch Exception e
         (error "Unexpected rollback failure"))
-      ))
-  )
-
-
-(defn create-write-func
-  "Creates function to write resource object
-
-  High order function that creates a function that tries to write resource
-  object.
-
-  Args:
-    put-func: fn[resource-id resource-object]
-
-  Returns:
-    fn[resource-id resource-object] that returns nil or resource-object"
-  [put-func]
-  (fn [resource-id resource-object]
-    (try
-      (if-let [resource-object (put-func resource-id resource-object)]
-        resource-object
-        (error "Failed to write resource object"))
-      (catch Exception e
-        (error "Unexpected exception: " (.getMessage e)))
       ))
   )
 
