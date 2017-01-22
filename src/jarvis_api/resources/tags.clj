@@ -28,9 +28,10 @@
   [tag-object]
   (cs/lower-case (:name tag-object)))
 
-(def rollback-tag! (jda/create-rollback-func put-tag-elasticsearch!
-                                             delete-tag-elasticsearch!))
 (def write-tag! (jda/create-write-func put-tag-elasticsearch!))
+(def remove-tag! (jda/create-remove-func delete-tag-elasticsearch!))
+(def rollback-tag! (jda/create-rollback-func write-tag!
+                                             remove-tag!))
 (def write-tag-reliably! (jda/create-write-reliably-func get-tag-elasticsearch!
                                                          write-tag!
                                                          rollback-tag!

@@ -4,8 +4,10 @@
             [schema.core :as s]
             [jarvis-api.schemas :refer [LogEntryObject LogEntryRequest]]
             [jarvis-api.config :as config]
-            [jarvis-api.data_access.logentries :as jda]
+            [jarvis-api.data-accessing :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
+            [jarvis-api.database.elasticsearch :as jes]
+            [jarvis-api.database.redis :as jre]
             [jarvis-api.util :as util]))
 
 
@@ -19,9 +21,32 @@
     { :items (jqh/get-hits-from-query query-result)
       :total (jqh/get-total-hits-from-query query-result) }))
 
+
+(def get-logentry-elasticsearch! (partial jes/get-jarvis-document "logentries"))
+(def put-logentry-elasticsearch! (partial jes/put-jarvis-document "logentries"))
+(def delete-logentry-elasticsearch! (partial jes/delete-jarvis-document "logentries"))
+
+(defn get-logentry-id
+  [logentry-object]
+  (:id logentry-object))
+
+
+(def write-logentry! (jda/create-write-func put-logentry-elasticsearch!
+                                            jre/add-logentry-to-event!))
+(def remove-logentry! (jda/create-remove-func delete-logentry-elasticsearch!
+                                              jre/remove-logentry-from-event!))
+(def rollback-logentry! (jda/create-rollback-func write-logentry!
+                                                  remove-logentry!))
+(def write-logentry-reliably! (jda/create-write-reliably-func
+                                get-logentry-elasticsearch!
+                                write-logentry!
+                                rollback-logentry!
+                                get-logentry-id))
+
+
 (s/defn get-log-entry! :- LogEntryObject
   [id :- s/Int]
-  (jda/get-log-entry-object! id))
+  (get-logentry-elasticsearch! id))
 
 (s/defn log-entry-exists?
   [id :- s/Int]
@@ -60,7 +85,7 @@
         id (int (or (:id log-entry-request) (generate-log-id created)))
         log-entry-object (create-log-entry-object log-entry-request id created-isoformat
                                                   event-id)]
-    (jda/write-log-entry-object! log-entry-object)))
+    (write-logentry-reliably! log-entry-object)))
 
 
 (s/defn update-log-entry! :- LogEntryObject
@@ -68,4 +93,4 @@
   (let [updated-log-entry-object (merge log-entry-object log-entry-request)
         updated-log-entry-object (assoc updated-log-entry-object
                                         :modified (util/create-timestamp-isoformat))]
-    (jda/write-log-entry-object! updated-log-entry-object)))
+    (write-logentry-reliably! updated-log-entry-object)))
