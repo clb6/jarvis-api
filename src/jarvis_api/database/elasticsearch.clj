@@ -33,11 +33,24 @@
     (if (:found response)
       (:_source response))))
 
+
 (defn delete-jarvis-document
-  [document-type document-id]
-  (let [conn (esr/connect config/jarvis-elasticsearch-uri)]
-    (esd/delete conn config/jarvis-elasticsearch-index document-type
-                (str document-id))))
+  "Delete jarvis document
+
+  NOTE: `document` is not used however its needed to keep consistent interface"
+  ([document-type document-id document]
+  ; Example result:
+  ; { :found true, :_index "jarvis-20160628", :_type "tags", :_id "one", :_version 2,
+  ;   :_shards {:total 2, :successful 1, :failed 0} }
+  (let [conn (esr/connect config/jarvis-elasticsearch-uri)
+        result (esd/delete conn config/jarvis-elasticsearch-index document-type
+                           (str document-id))]
+    (:found result)))
+
+  ([document-type document-id]
+   (delete-jarvis-document document-type document-id nil))
+  )
+
 
 (defn count-jarvis-documents
   [document-type]
