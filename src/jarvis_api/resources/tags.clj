@@ -3,7 +3,6 @@
             [schema.core :as s]
             [jarvis-api.schemas :refer [TagObject TagRequest]]
             [jarvis-api.config :as config]
-            [jarvis-api.markdown_filer :as mf]
             [jarvis-api.data-accessing :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
             [jarvis-api.database.elasticsearch :as jes]
