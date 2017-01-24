@@ -8,45 +8,61 @@
                             :port config/jarvis-redis-port}})
 (defmacro wcar* [& body] `(car/wcar conn ~@body))
 
-; Events
+; Utils
 
-(defn get-log-entry-ids
-  ""
+(defn- create-key-event-logentries
   [event-id]
-  (let [redis-key (str "event:" event-id ":logs")]
-    ; All of these log entry ids are returned as strings, convert back to
-    ; integers
-    (map car/as-int (wcar* (car/smembers redis-key))))
-  )
+  (str "event:" event-id ":logs"))
 
-(defn create-key-event-artifacts
+(defn- create-key-event-artifacts
   [event-id]
   (str "event:" event-id ":artifacts"))
 
-(defn get-artifacts
-  [event-id]
-  (let [redis-key (create-key-event-artifacts event-id)]
-    (wcar* (car/smembers redis-key)))
+; Events
+
+(defn get-logentry-ids-for-event!
+  ""
+  [event-id event-mixin]
+  (let [redis-key (create-key-event-logentries event-id)
+        ; All of these log entry ids are returned as strings, convert back to
+        ; integers
+        logentry-ids (map car/as-int (wcar* (car/smembers redis-key)))]
+    (assoc event-mixin :logEntries logentry-ids)
+    ))
+
+(defn get-event-artifacts!
+  [event-id event-mixin]
+  (let [redis-key (create-key-event-artifacts event-id)
+        artifacts (wcar* (car/smembers redis-key))]
+    (assoc event-mixin :artifacts artifacts)
+    ))
+
+
+(defn remove-event-artifacts!
+  [event-id event-mixin]
+  (let [redis-key (create-key-event-artifacts event-id)
+        num-removed (wcar* (car/del redis-key))]
+    (> num-removed 0))
   )
 
-(defn update-artifacts
-  "Update artifacts
-
-  Means delete existing and add the new artifacts. Returns the number of artifacts
-  that were added."
-  [event-id artifacts]
-  (let [redis-key (create-key-event-artifacts event-id)]
-    (wcar* (car/del redis-key))
-    (reduce + (map #(wcar* (car/sadd redis-key %)) artifacts))
-    )
-  )
+(defn write-event-artifacts!
+  [event-id event-mixin]
+  ; Try to remove and move on no matter what because can't tell whether the
+  ; removal failed vs there was nothing to remove
+  (remove-event-artifacts! event-id event-mixin)
+  (let [artifacts (:artifacts event-mixin)
+        redis-key (create-key-event-artifacts event-id)
+        num-added (reduce + (map #(wcar* (car/sadd redis-key %)) artifacts))]
+    (if (= num-added (count artifacts))
+      event-mixin)
+    ))
 
 ; For log entries
 
 (defn- update-event-relations!
   [redis-operation-func log-entry-object]
   (if-let [event-id (:event log-entry-object)]
-    (let [redis-key (str "event:" event-id ":logs")]
+    (let [redis-key (create-key-event-logentries event-id)]
       (wcar* (redis-operation-func redis-key (:id log-entry-object))))
     (warn (str "No event set for " (:id log-entry-object)))
     ))
