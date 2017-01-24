@@ -26,12 +26,16 @@
       document)))
 
 (defn get-jarvis-document
-  [document-type document-id]
+  ([document-type document-id target-document]
   (let [conn (esr/connect config/jarvis-elasticsearch-uri)
         response (esd/get conn config/jarvis-elasticsearch-index document-type
                           (str document-id))]
     (if (:found response)
-      (:_source response))))
+      (merge target-document (:_source response)))
+    ))
+  ([document-type document-id]
+   (get-jarvis-document document-type document-id {})
+   ))
 
 
 (defn delete-jarvis-document
