@@ -14,6 +14,21 @@
 ; remove fials..delete, nothing
 
 
+(defn create-retrieve-func
+  [& get-funcs]
+  (fn [resource-id resource-object]
+    (letfn [(wrap-get-func [get-func]
+              (fn [resource-id resource-object]
+                (if resource-object
+                  (get-func resource-id resource-object)))
+              )]
+      (let [wrapped-get-funcs (map wrap-get-func get-funcs)
+            wrapped-get-funcs (map #(partial % resource-id) wrapped-get-funcs)]
+        ((apply comp wrapped-get-funcs) resource-object)
+        )))
+  )
+
+
 (defn create-write-func
   "Creates function to write resource object
 
@@ -92,6 +107,7 @@
         (write-func resource-id resource-object-prev)
         (remove-func resource-id resource-object-prev)
         )
+      (warn "Rolled back: " resource-id)
       (catch Exception e
         (error "Unexpected rollback failure"))
       ))
