@@ -3,18 +3,11 @@
             [schema.core :as s]
             [jarvis-api.schemas :refer [EventObject EventRequest EventArtifact
                                         EventMixin]]
-            [jarvis-api.data_access.events :as jda]
+            [jarvis-api.data-accessing :as jda]
             [jarvis-api.data_access.queryhelp :as jqh]
-            [jarvis-api.database.redis :as jredis]
-            [jarvis-api.database.elasticsearch :as jelastic]
+            [jarvis-api.database.redis :as jre]
+            [jarvis-api.database.elasticsearch :as jes]
             [jarvis-api.util :as util]))
-
-
-(def put-event-object! (partial jelastic/put-jarvis-document "events"))
-(def make-event! (partial jda/make-event-from-object jredis/get-log-entry-ids
-                         jredis/get-artifacts))
-(def write-event! (partial jda/write-event put-event-object! jredis/update-artifacts
-                           make-event!))
 
 
 (defn query-events!
@@ -25,22 +18,46 @@
         query-criterias (jqh/add-query-criteria-weight weight query-criterias)
         query-criterias (jqh/add-query-criteria-description searchterm query-criterias)
         query-result (jqh/query-events query-criterias from)
-        make-events! (partial map make-event!)
+        retrieve-func! (jda/create-retrieve-func jre/get-event-artifacts!
+                                                 jre/get-logentry-ids-for-event!)
         ]
-    { :items (make-events! (jqh/get-hits-from-query query-result))
+    { :items (map (fn [event] (retrieve-func! (:eventId event) event))
+                  (jqh/get-hits-from-query query-result))
       :total (jqh/get-total-hits-from-query query-result) }))
+
+
+(def get-event-object-elasticsearch! (partial jes/get-jarvis-document "events"))
+(def delete-event-object-elasticsearch! (partial jes/delete-jarvis-document "events"))
+(defn put-event-elasticsearch!
+  [event-id event-mixin]
+  (let [put-func (partial jes/put-jarvis-document "events")
+        event-object (dissoc event-mixin :artifacts :logEntries)]
+    (if (put-func event-id event-object)
+      event-mixin))
+  )
 
 
 (s/defn get-event! :- EventMixin
   [event-id :- String]
-  (let [get-event-object (partial jelastic/get-jarvis-document "events")]
-    (jda/get-event get-event-object make-event! event-id)))
+  (let [retrieve-func! (jda/create-retrieve-func get-event-object-elasticsearch!
+                                                 jre/get-event-artifacts!
+                                                 jre/get-logentry-ids-for-event!)]
+    (retrieve-func! event-id {})))
 
 
-(defn- write-event-with-rollback!
-  [event-object artifacts]
-  (let [event-prev (get-event! (:eventId event-object))]
-    (write-event! event-object artifacts event-prev)))
+(def write-event! (jda/create-write-func put-event-elasticsearch!
+                                         jre/write-event-artifacts!))
+(def remove-event! (jda/create-remove-func delete-event-object-elasticsearch!
+                                           jre/remove-event-artifacts!))
+(def rollback-event! (jda/create-rollback-func write-event!
+                                               remove-event!))
+(def write-event-reliably! (jda/create-write-reliably-func
+                             get-event!
+                             write-event!
+                             rollback-event!
+                             (fn [event-mixin] (:eventId event-mixin))
+                             ))
+
 
 (s/defn post-event! :- EventMixin
   [event-request :- EventRequest]
@@ -48,17 +65,18 @@
         created-isoformat (or (:created event-request)
                               (util/create-timestamp-isoformat))
         occurred-isoformat (or (:occurred event-request) created-isoformat)
-        event-object (dissoc event-request :artifacts)
-        event-object (assoc event-object :eventId event-id
+        event-object (assoc event-request :eventId event-id
                             :created created-isoformat :occurred occurred-isoformat
                             :location (:location event-request))]
 
-    (write-event-with-rollback! event-object (:artifacts event-request))))
+    (write-event-reliably! event-object)
+    ))
 
 
 (s/defn update-event! :- EventMixin
   [event-mixin :- EventMixin event-request :- EventRequest]
   (let [event-object (dissoc event-mixin :artifacts :logEntries)
-        updated-event-object (merge event-object (dissoc event-request :artifacts))]
+        updated-event (merge event-object event-request)]
 
-    (write-event-with-rollback! updated-event-object (:artifacts event-request))))
+    (write-event-reliably! updated-event)
+    ))
