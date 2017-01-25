@@ -3,18 +3,23 @@
             [taoensso.timbre :as timbre :refer [warn error]]
             ))
 
-; prev exists:
-; put fails..nothing, nothing
-; add fails..put prev, nothing
-; remove fails..put prev, nothing
-;
-; first:
-; put fails..nothing, nothing
-; add fails..delete, nothing
-; remove fials..delete, nothing
+; Collection of pure, closure functions that is to be used for transactional
+; operations
 
 
 (defn create-retrieve-func
+  "Create function to retrieve a resource object
+
+  High order function that creates a function that takes a sequence of get
+  functions that are threaded together to form and to return a resource object.
+  The retrieve will short-circuit and return nil if any of the gets return nil.
+
+  Args:
+    get-funcs: Sequence of fn[resource-id resource-object] -> maybe resource-object
+
+  Returns:
+    fn[resource-id resource-object] -> maybe resource-object
+  "
   [& get-funcs]
   (fn [resource-id resource-object]
     (letfn [(wrap-get-func [get-func]
@@ -30,16 +35,17 @@
 
 
 (defn create-write-func
-  "Creates function to write resource object
+  "Creates function to write a resource object
 
-  High order function that creates a function that tries to write resource
-  object.
+  High order function that creates a function that tries to write a resource
+  object by calling a sequence of put functions.  If any of the put functions
+  returns nil then the whole transaction short circuits and nil is returned.
 
   Args:
-    put-funcs: Arbitrary list of fn[resource-id resource-object]
+    put-funcs: Sequence of fn[resource-id resource-object] -> maybe resource-object
 
   Returns:
-    fn[resource-id resource-object] that returns nil or resource-object"
+    fn[resource-id resource-object] -> maybe resource-object"
   [& put-funcs]
   (fn [resource-id resource-object]
     (letfn [(wrap-put-func [put-func]
@@ -59,17 +65,20 @@
         )))
   )
 
-(defn create-remove-func
-  "Creates function to write resource object
 
-  High order function that creates a function that tries to write resource
-  object.
+(defn create-remove-func
+  "Creates function to remove a resource object
+
+  High order function that creates a function that tries to remove a resource
+  object by calling a sequence of delete functions.  All the delete functions are
+  attempted and there is no short circuiting.  If all the deletes return true
+  then the entire remove call returns true, else false.
 
   Args:
-    put-funcs: Arbitrary list of fn[resource-id resource-object]
+    put-funcs: Sequence of fn[resource-id resource-object] -> boolean
 
   Returns:
-    fn[resource-id resource-object] that returns nil or resource-object"
+    fn[resource-id resource-object] -> boolean"
   [& delete-funcs]
   (fn [resource-id resource-object]
     (try
@@ -92,14 +101,15 @@
   "Creates rollback function
 
   High order function that creates a function that tries to put the previous
-  resource object or deletes the existing one.
+  resource object if it exists else deletes the currently existing one.
 
   Args:
-    put-func: fn[resource-id resource-object]
-    delete-func: fn[resource-id]
+    put-func: fn[resource-id resource-object] -> maybe resource-object
+    delete-func: fn[resource-id resource-object] -> boolean
 
   Returns:
-    fn[resource-id resource-object] that returns nil or true"
+    fn[resource-id resource-object] -> maybe resource-object or boolean"
+  ; TODO: Fix? Have a more consistent retrun?
   [write-func remove-func]
   (fn [resource-id resource-object-prev]
     (try
@@ -115,19 +125,21 @@
 
 
 (defn create-write-reliably-func
-  "Creates function to writes resource object reliably
+  "Creates function to write a resource object reliably
 
-  Reliably means that if something bad happens while trying to write, then will
-  try to rollback.
+  Reliably means that if something bad happens while trying to write, then an
+  attempt to rollback is made.  Returns only the successfully written resource
+  object else nil.
 
   Args:
-    get-func: fn[resource-id]
-    write-func: fn[resource-id resource-object]
-    rollback-func: fn[resource-id resource-object]
-    get-resource-id-func: fn[resource-object]
+    get-func: fn[resource-id] -> resource object, used to retrieve the previous resource
+      object if it exists
+    write-func: fn[resource-id resource-object] -> maybe resource object
+    rollback-func: fn[resource-id resource-object] -> maybe resource object or boolean
+    get-resource-id-func: fn[resource-object] -> any
 
   Returns:
-    fn[resource-object] that returns nil or resource-object
+    fn[resource-object] -> maybe resource-object
   "
   [get-func write-func rollback-func get-resource-id-func]
   (fn [resource-object]
