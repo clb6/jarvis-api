@@ -19,29 +19,12 @@
       :total (jqh/get-total-hits-from-query query-result) }))
 
 
-(def get-tag-elasticsearch! (partial jes/get-jarvis-document "tags"))
-(def put-tag-elasticsearch! (partial jes/put-jarvis-document "tags"))
-(def delete-tag-elasticsearch! (partial jes/delete-jarvis-document "tags"))
-
-(defn get-tag-id
-  [tag-object]
-  (cs/lower-case (:name tag-object)))
-
-(def write-tag! (jda/create-write-func put-tag-elasticsearch!))
-(def remove-tag! (jda/create-remove-func delete-tag-elasticsearch!))
-(def rollback-tag! (jda/create-rollback-func write-tag!
-                                             remove-tag!))
-(def write-tag-reliably! (jda/create-write-reliably-func get-tag-elasticsearch!
-                                                         write-tag!
-                                                         rollback-tag!
-                                                         get-tag-id))
-
-
 (s/defn get-tag! :- TagObject
   "Returns web response where it will return a tag object if a tag is found"
   [tag-name :- String]
-  (get-tag-elasticsearch! (cs/lower-case tag-name))
-  )
+  (let [get-tag-elasticsearch! (partial jes/get-jarvis-document "tags")]
+    (get-tag-elasticsearch! (cs/lower-case tag-name))
+  ))
 
 
 (defn tag-exists?
@@ -75,6 +58,24 @@
   [tag-name :- s/Str tag-request :- TagRequest]
   (= (cs/lower-case tag-name) (cs/lower-case (:name tag-request)))
   )
+
+
+(defn- create-write-tag-reliably-func
+  []
+  (letfn [(get-tag-id
+            [tag-object]
+            (cs/lower-case (:name tag-object)))]
+    (let [put-tag-elasticsearch! (partial jes/put-jarvis-document "tags")
+          delete-tag-elasticsearch! (partial jes/delete-jarvis-document "tags")
+
+          write-tag! (jda/create-write-func put-tag-elasticsearch!)
+          remove-tag! (jda/create-remove-func delete-tag-elasticsearch!)
+          rollback-tag! (jda/create-rollback-func write-tag!
+                                                  remove-tag!)]
+      (jda/create-write-reliably-func get-tag! write-tag! rollback-tag! get-tag-id)
+      )))
+
+(def write-tag-reliably! (create-write-tag-reliably-func))
 
 
 (s/defn post-tag! :- TagObject

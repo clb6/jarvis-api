@@ -26,37 +26,37 @@
       :total (jqh/get-total-hits-from-query query-result) }))
 
 
-(def get-event-object-elasticsearch! (partial jes/get-jarvis-document "events"))
-(def delete-event-object-elasticsearch! (partial jes/delete-jarvis-document "events"))
-(defn put-event-elasticsearch!
-  [event-id event-mixin]
-  (let [put-func (partial jes/put-jarvis-document "events")
-        event-object (dissoc event-mixin :artifacts :logEntries)]
-    (if (put-func event-id event-object)
-      event-mixin))
-  )
-
-
 (s/defn get-event! :- EventMixin
   [event-id :- String]
-  (let [retrieve-func! (jda/create-retrieve-func get-event-object-elasticsearch!
+  (let [get-event-elasticsearch! (partial jes/get-jarvis-document "events")
+        retrieve-func! (jda/create-retrieve-func get-event-elasticsearch!
                                                  jre/get-event-artifacts!
                                                  jre/get-logentry-ids-for-event!)]
     (retrieve-func! event-id {})))
 
 
-(def write-event! (jda/create-write-func put-event-elasticsearch!
-                                         jre/write-event-artifacts!))
-(def remove-event! (jda/create-remove-func delete-event-object-elasticsearch!
-                                           jre/remove-event-artifacts!))
-(def rollback-event! (jda/create-rollback-func write-event!
-                                               remove-event!))
-(def write-event-reliably! (jda/create-write-reliably-func
-                             get-event!
-                             write-event!
-                             rollback-event!
-                             (fn [event-mixin] (:eventId event-mixin))
-                             ))
+(defn- create-write-event-reliably-func
+  []
+  (letfn [(put-event-elasticsearch!
+            [event-id event]
+            (let [put-func (partial jes/put-jarvis-document "events")
+                  event-object (dissoc event :artifacts :logEntries)]
+              (if (put-func event-id event-object)
+                event)))]
+
+    (let [delete-event-elasticsearch! (partial jes/delete-jarvis-document "events")
+          write-event! (jda/create-write-func put-event-elasticsearch!
+                                              jre/write-event-artifacts!)
+          remove-event! (jda/create-remove-func delete-event-elasticsearch!
+                                                jre/remove-event-artifacts!)
+          rollback-event! (jda/create-rollback-func write-event!
+                                                    remove-event!)]
+      (jda/create-write-reliably-func get-event! write-event! rollback-event!
+                               (fn [event-mixin] (:eventId event-mixin))
+                               ))
+    ))
+
+(def write-event-reliably! (create-write-event-reliably-func))
 
 
 (s/defn post-event! :- EventMixin

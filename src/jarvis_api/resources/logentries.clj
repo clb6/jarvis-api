@@ -22,35 +22,11 @@
       :total (jqh/get-total-hits-from-query query-result) }))
 
 
-(def get-logentry-elasticsearch! (partial jes/get-jarvis-document "logentries"))
-(def put-logentry-elasticsearch! (partial jes/put-jarvis-document "logentries"))
-(def delete-logentry-elasticsearch! (partial jes/delete-jarvis-document "logentries"))
-
-(defn get-logentry-id
-  [logentry-object]
-  (:id logentry-object))
-
-
-(def write-logentry! (jda/create-write-func put-logentry-elasticsearch!
-                                            jre/add-logentry-to-event!))
-(def remove-logentry! (jda/create-remove-func delete-logentry-elasticsearch!
-                                              jre/remove-logentry-from-event!))
-(def rollback-logentry! (jda/create-rollback-func write-logentry!
-                                                  remove-logentry!))
-(def write-logentry-reliably! (jda/create-write-reliably-func
-                                get-logentry-elasticsearch!
-                                write-logentry!
-                                rollback-logentry!
-                                get-logentry-id))
-
-
 (s/defn get-log-entry! :- LogEntryObject
   [id :- s/Int]
-  (get-logentry-elasticsearch! id))
-
-(s/defn log-entry-exists?
-  [id :- s/Int]
-  ((comp not nil?) (get-log-entry! id)))
+  (let [get-logentry-elasticsearch! (partial jes/get-jarvis-document "logentries")]
+    (get-logentry-elasticsearch! id)
+    ))
 
 
 (defn- generate-log-id
@@ -73,6 +49,27 @@
                                  target-map))
             log-entry-object
             [:parent :event :todo])))
+
+
+(defn- create-write-logentry-reliably-func
+  []
+  (letfn [(get-logentry-id
+            [logentry-object]
+            (:id logentry-object))]
+    (let [put-logentry-elasticsearch! (partial jes/put-jarvis-document "logentries")
+          delete-logentry-elasticsearch! (partial jes/delete-jarvis-document "logentries")
+
+          write-logentry! (jda/create-write-func put-logentry-elasticsearch!
+                                                 jre/add-logentry-to-event!)
+          remove-logentry! (jda/create-remove-func delete-logentry-elasticsearch!
+                                                   jre/remove-logentry-from-event!)
+          rollback-logentry! (jda/create-rollback-func write-logentry!
+                                                       remove-logentry!)]
+      (jda/create-write-reliably-func get-log-entry! write-logentry!
+                                      rollback-logentry! get-logentry-id)
+      )))
+
+(def write-logentry-reliably! (create-write-logentry-reliably-func))
 
 
 (s/defn post-log-entry! :- LogEntryObject
