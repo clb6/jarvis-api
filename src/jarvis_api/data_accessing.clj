@@ -104,22 +104,37 @@
   resource object if it exists else deletes the currently existing one.
 
   Args:
-    put-func: fn[resource-id resource-object] -> maybe resource-object
-    delete-func: fn[resource-id resource-object] -> boolean
+    write-func: fn[resource-id resource-object] -> maybe resource-object
+    remove-func: fn[resource-id resource-object] -> boolean
 
   Returns:
-    fn[resource-id resource-object] -> maybe resource-object or boolean"
+    fn[resource-id resource-object] -> boolean"
   ; TODO: Fix? Have a more consistent retrun?
   [write-func remove-func]
   (fn [resource-id resource-object-prev]
     (try
       (if resource-object-prev
-        (write-func resource-id resource-object-prev)
-        (remove-func resource-id resource-object-prev)
+        ; Rolling back via restoring previous version
+        (let [resource-object (write-func resource-id resource-object-prev)]
+          (if resource-object
+            (do
+              (warn "Roll back via restoring: ok, " resource-id)
+              true)
+            (do
+              (error "Roll back via restoring: failed, " resource-id)
+              false)
+            ))
+        ; Rolling back via cleaning up the current version
+        (let [result (remove-func resource-id resource-object-prev)]
+          (if result
+            (warn "Roll back via clean up: ok, " resource-id)
+            (error "Roll back via clean up: failed, " resource-id))
+          result
+          )
         )
-      (warn "Rolled back: " resource-id)
       (catch Exception e
-        (error "Unexpected rollback failure"))
+        (error "Unexpected rollback failure")
+        false)
       ))
   )
 
@@ -135,7 +150,7 @@
     get-func: fn[resource-id] -> resource object, used to retrieve the previous resource
       object if it exists
     write-func: fn[resource-id resource-object] -> maybe resource object
-    rollback-func: fn[resource-id resource-object] -> maybe resource object or boolean
+    rollback-func: fn[resource-id resource-object] -> boolean
     get-resource-id-func: fn[resource-object] -> any
 
   Returns:
