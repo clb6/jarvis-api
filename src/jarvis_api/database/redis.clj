@@ -42,7 +42,9 @@
   [event-id event-mixin]
   (let [redis-key (create-key-event-artifacts event-id)
         num-removed (wcar* (car/del redis-key))]
-    (> num-removed 0))
+    ; Removes are always true. I would have to do a get and compare against
+    ; num-removed but that seems like a meaningless comparison
+    (>= num-removed 0))
   )
 
 (defn write-event-artifacts!
@@ -79,5 +81,7 @@
   [logentry-id logentry-object]
   (let [remove-func (partial update-event-relations! car/srem)
         result (remove-func logentry-object)]
-    (> result 0))
+    ; Removes are always true. I would have to do a get and compare against
+    ; num-removed but that seems like a meaningless comparison
+    (>= result 0))
   )
