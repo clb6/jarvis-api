@@ -1,10 +1,23 @@
 # jarvis-api
 
-jarvis-api is a RESTful data API that is the core service for jarvis.  It is used to manage the jarvis resources:
+`jarvis-api` is a REST API that is responsible for managing personal metadata in the form of the resources:
 
-* Events - Categorized personal occurrences
-* Log entries - Reflections on events
+* Events - Categorized personal occurrences that are tied to personal information and artifacts
+* Log entries - Reflections upon events
 * Tags - Concepts, people, places, things used to label log entries
+
+This metadata is used to build a richer context for your personal data to help you with retaining and digesting the information and to help store the information for better retrieval.  Personal data like notes, papers, drafts, reports, emails, photos, videos are each enhanced by tying in additional subjective tidbits relevant to you and your relationship with your piece of data.
+
+The metadata answers subjective questions like:
+
+* What were you doing?
+* Where were you?
+* What time of day?
+* Who was involved?
+* How did you feel?
+* How did it impact you?
+* What are your opinions?
+* What are the next steps?
 
 ## Dependencies
 
@@ -25,7 +38,7 @@ Variable | Description | Optional? | Dockerfile? | Default
 
 ## Installation
 
-Take a look at the jarvis repository for instructions.
+Take a look at the [`jarvis` repository](https://github.com/clb6/jarvis) for instructions.
 
 ## Admin
 
